@@ -1,50 +1,75 @@
-First Meeting Template
-NOTES: This meeting does NOT have to take place in person (that may be preferred) but it must be run synchronously. If you do meet via Discord Voice, Zoom, or other streaming, I HIGHLY encourage you to meet with a video camera on.
-
-Agenda Item 1:
+# Sprint 0 Meeting
+## Agenda Item 1:
 Decide on a Meeting Manager (This person is NOT the group leader. The meeting manager’s role is to keep the group on task during the meeting)
 
-Meeting Manager:  (write the name here)
+Meeting Manager:  Caleb Ernst
 
-Agenda Item 2:
+## Agenda Item 2:
 Decide on a Meeting Scribe (This person documents the meeting minutes. Group, help the scribe in their role. Keep your own notes. Work slowly enough so that the scribe may document the meeting)
 
-Meeting Scribe: (write the name here)
-Agenda Item 3:
+Meeting Scribe: Christina Blackwell 
+
+## Agenda Item 3:
 Get to know each group member. Each group member answer (at least) the following questions:
-(Scribe - put the answers for ALL group members in your meeting minutes.)
-What is your name/nickname and what do you prefer to be called?
-(write the answer  here)
-Where did you do Freshman/Sophomore year and/or where did you take 142/143?  Did your 142/143 prepare you for this course?
-(write the answer  here)
-What are your programming strengths and weaknesses?
+
+### What is your name/nickname and what do you prefer to be called?
+Christina Blackwell: Christina
+Mansur Yassin: Mansur
+Caleb Ernst: Caleb
+Charlene Jarrell: Charlene
+
+### Where did you do Freshman/Sophomore year and/or where did you take 142/143?  Did your 142/143 prepare you for this course?
+Christina Blackwell: Olympic College; yes
+Mansur Yassin: Seattle Central College; yes
+Caleb Ernst: Pierce College; kind of - taught debugging/documentation skills, but not version control
+Charlene Jarrell: Green River College; taught fundamentals, not any of the specific language/tools we are using this quarter
+
+### What are your programming strengths and weaknesses?
 BE HONEST! It’s ok that you are not a good programmer. Let your group know so that the group as a whole can work with you.
-(write the answer  here)
-What other obligations take time away from your ability to work on this project?
+
+Charlene: weakness: databases, strength: networking, TCP/IP protocols
+Christina: weakness: databases, strengths: cloud computing
+Caleb: strengths: databases, weakness: networking
+Mansur: strengths: versatile, reliable, communication
+
+### What other obligations take time away from your ability to work on this project?
 Work, Family/Kids, 20 credits this quarter, etc. BE HONEST Let your group know so that the group as a whole can work with you.
-(write the answer  here)
+Other classes, Charlene: care taking for grandparents
+Caleb: IEEE meetings
 
-What is something you want others to know about yourself?
-I’m a climber, I ride my bike to campus everyday, I’m weird and that's ok. I play Clash of Apex Duty 18 hours a day and am semi-pro. Etc.
-(write the answer  here)
+### What is something you want others to know about yourself?
+Christina: likes birds, goes birdwatching
+Mansur: likes to draw, took computer graphics 
+Caleb: open for hire
+Charlene: can be slower to understand material but gains a deep understanding
 
-Agenda Item 4:
-Decide on a group structure.
-Do you want to have a dedicated group leader?
+## Agenda Item 4:
+No dedicated group leader.
+We will create branches for each feature we are implementing. Don't merge into main until changes are ready to be deployed.
+Each week we decide on what we should be doing during our meetings and share progress during subsequent meetings.
+We will communicate in the Discord when we have pull requests available for review. 
+Our SMEs will review code related to their expertise. 
+We are using the WebStorm IDE.
+Still need to decide where we're going to host API. 
+
 Who are the Subject Matter Experts (SME) for different areas? GUI, OO, Logic, Management,  etc.
-Students A and B pair program together while students C and D pair program together.
-Student A is a dedicated tester/Unit test creator.
-Consider your group's strengths and weaknesses. Pair a weak programmer with a strong programmer for pair programming sessions.
-Who has Git experience and/or wants to dive into working with Git and GitHub to become the group's Git SME?
-Etc.
-(write the discussion here)
-Agenda Item 5:
-Discuss your concerns for the group project. Air any bad experiences from group work in the past. Discuss what you want to get out of this group project. Discuss strategies you think can work for a successful group project.
-(Document discussion from ALL members here)
-Agenda Item 6:
-The group needs to meet synchronously (online is OK) AT LEAST 3 times a Week. What times/days work for everyone?
-https://www.when2meet.com/
-(write the answer  here)
-Agenda Item 7:
-Wrap-up
-(write the discussion here)
+Charlene: testing, networking
+Christina: version control/GitHub, IDE
+Mansur: database, front end 
+Caleb: logic, database, debugging, cross-platform development
+
+## Agenda Item 5:
+no one had any terrible group project experiences to share
+want to get web dev experience
+Christina: make sure we are following OO principles; avoid tight coupling
+Caleb: wants a consistent commenting format
+Charlene: make sure documentation is consistent, communicate with team members and be punctual to meetings
+Mansur: don't over rely on AI, make sure we understand the code 
+
+## Agenda Item 6:
+Monday: 3-5 pm
+Wednesday: 12-5 pm
+Friday: 2:30 - 4 pm
+
+## Agenda Item 7:
+Setting up WebStorm, working through the Sprint 0 deliverables, deciding where we are going to host our API (Heroku/Vercel?)
