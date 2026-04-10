@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
-  title: TCSS 460 Group Project API
+  title: TCSS 460 Group 8 API
   description: |
-    **Team:** [Your Team Name]
-    **Deployed URL:** [Your deployed URL]
+    **Team:** Group 8
+    **Deployed URL:** Not yet deployed
 
-    A RESTful API for the TCSS 460 group project.
+    A RESTful API for the TCSS 460 Group 8 project.
   version: 0.1.0
 
 servers:
@@ -33,3 +33,19 @@ paths:
                   message:
                     type: string
                     example: 'Hello, TCSS 460!'
+  /health:
+    get:
+      tags: [General]
+      summary: Health check
+      description: Heartbeat route that returns a fixed response confirming the API is alive.
+      responses:
+        '200':
+          description: API is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'response is working'

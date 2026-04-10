@@ -28,7 +28,7 @@ app.get('/hello/:Mansur', (_request: Request, response: Response) => {
 });
 
 app.get('/health', (_request: Request, response: Response) => {
-  response.status(200).json({ status:'alive' });
+  response.status(200).json({ status: 'alive' });
 });
 // 404 handler — must be after all routes
 app.use((_request: Request, response: Response) => {
