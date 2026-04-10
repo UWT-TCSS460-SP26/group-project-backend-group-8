@@ -31,6 +31,8 @@ app.get('/hello/Mansur', (_request: Request, response: Response) => {
   response.json({ message: `Hello, Mansur` });
 });
 
+app.get('/hello/caleb', (_request: Request, response: Response) => {
+  response.json({ message: `Hello, Caleb` });
 app.get('/hello/Charlene', (_request: Request, response: Response) => {
   response.json({ message: `Hello, Charlene` });
 });
