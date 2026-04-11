@@ -18,6 +18,7 @@ app.get('/openapi.json', (_request: Request, response: Response) => {
 });
 app.use('/api-docs', apiReference({ spec: { url: '/openapi.json' } }));
 
+// Routes
 app.get('/health', (_request: Request, response: Response) => {
   response.status(200).json({ status: 'alive' });
 });
