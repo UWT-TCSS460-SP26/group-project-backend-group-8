@@ -24,7 +24,7 @@ app.get('/health', (_request: Request, response: Response) => {
 });
 
 app.get('/hello', (_request: Request, response: Response) => {
-    response.json({ message: 'Hello, TCSS 460!' });
+  response.json({ message: 'Hello, TCSS 460!' });
 });
 
 // 404 handler — must be after all routes
