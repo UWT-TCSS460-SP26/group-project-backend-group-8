@@ -60,7 +60,7 @@ Each week we decide on what we should be doing during our meetings and share pro
 We will communicate in the Discord when we have pull requests available for review.
 Our SMEs will review code related to their expertise.
 We are using the WebStorm IDE.
-Still need to decide where we're going to host API.
+We are hosting API with Render: https://tcss460-team-8-api.onrender.com/
 
 Who are the Subject Matter Experts (SME) for different areas? GUI, OO, Logic, Management, etc.
 Charlene: testing, networking
@@ -71,7 +71,7 @@ Caleb: logic, database, debugging, cross-platform development
 ## Agenda Item 5:
 
 no one had any terrible group project experiences to share
-want to get web dev experience
+want to get full stack web dev experience
 Christina: make sure we are following OO principles; avoid tight coupling
 Caleb: wants a consistent commenting format
 Charlene: make sure documentation is consistent, communicate with team members and be punctual to meetings
