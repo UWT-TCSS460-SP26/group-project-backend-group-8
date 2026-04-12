@@ -19,6 +19,13 @@ app.get('/openapi.json', (_request: Request, response: Response) => {
 app.use('/api-docs', apiReference({ spec: { url: '/openapi.json' } }));
 
 // Routes
+app.get('/', (_request: Request, response: Response) => {
+  response.json({
+    message: "Welcome to Group 8's Backend API!",
+    docs: 'Navigate to /api-docs to view the OpenAPI documentation',
+  });
+});
+
 app.get('/health', (_request: Request, response: Response) => {
   response.status(200).json({ status: 'alive' });
 });

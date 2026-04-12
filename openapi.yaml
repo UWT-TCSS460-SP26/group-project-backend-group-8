@@ -3,14 +3,14 @@ info:
   title: TCSS 460 Group 8 API
   description: |
     **Team:** Group 8
-    **Deployed URL:** Not yet deployed
+    **Deployed URL:** https://tcss460-team-8-api.onrender.com/
 
     A RESTful API for the TCSS 460 Group 8 project.
   version: 0.1.0
 
 servers:
-  - url: http://localhost:3000
-    description: Local development
+  - url: https://tcss460-team-8-api.onrender.com/
+    description: Express API server hosted on Render
 
 tags:
   - name: General
