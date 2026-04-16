@@ -1,0 +1,11 @@
+### Get hello endpoint
+GET http://localhost:3000/hello
+
+### Create a new item
+POST http://localhost:3000/items
+Content-Type: application/json
+
+{
+  "name": "Test Item",
+  "description": "A test item"
+}
