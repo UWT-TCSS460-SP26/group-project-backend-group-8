@@ -1,4 +1,4 @@
-# Sprint 0 Meeting
+# Sprint-0 Meeting
 
 4/9/2026
 
@@ -114,3 +114,74 @@ _The group needs to meet synchronously (online is OK) AT LEAST 3 times a Week. W
 
 The rest of the meeting was used to set up WebStorm, work through the Sprint 0 deliverables, and deciding what service to use
 to deploy our API.
+
+# Sprint-1 Meeting
+
+4/15/2026
+
+3:50 pm - 5:00 pm
+
+Attending: All
+
+Meeting Manager: Caleb Ernst
+
+Meeting Scribe: Charlene Jarrell
+
+## Agenda Item 1:
+
+_Update ESlint._
+
+Christina followed instructions provided in Sprint 1 to update ESlint and pushed to main.
+
+## Agenda Item 2:
+
+_Accquire TMDB API Key._
+
+Mansur completed this task.
+
+## Agenda Item 3:
+
+_Design our API routes and response shapes._
+
+Minimum requirement:  
+-Support search by title  
+-Return response card with poster image, title, release year/first air date, and synopsis
+
+Search by Title  
+https://api.themoviedb.org/3/search/movie  
+id:  
+https://api.themoviedb.org/3/search/tv  
+id:
+
+Response Card  
+https://api.themoviedb.org/3/movie/{movie_id}  
+id:  
+title:  
+poster_path:  
+release_date:  
+overview:  
+https://api.themoviedb.org/3/tv/{series_id}  
+id:  
+name:  
+poster_path:  
+first_air_date;  
+overview:
+
+Return Popular Movie  
+https://api.themoviedb.org/3/movie/popular  
+https://developer.themoviedb.org/reference/tv-series-popular-list
+
+## Agenda Item 4:
+
+_Questions to Be Addressed Before or at Next Meeting._
+
+For the group
+
+Q: Should we allow search by keyword (Star Wars) rather than the full title (Star Wars: Episode IV - A New Hope)?  
+Q: Should we cut off the popular movies/shows list based on minimum rating?  
+Q: Does everyone need their own TMDB API key? If so, which one is used in Render?
+
+For the professor
+
+Q: What is meant by render a response "card"?  
+Q: Does popular movies/tv shows return the response card? Is it just a filtered JSON response?
