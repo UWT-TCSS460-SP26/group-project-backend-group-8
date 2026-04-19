@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import YAML from 'yaml';
+import { routes } from './routes';
 import { apiReference } from '@scalar/express-api-reference';
 
 const app = express();
@@ -19,6 +20,8 @@ app.get('/openapi.json', (_request: Request, response: Response) => {
 app.use('/api-docs', apiReference({ spec: { url: '/openapi.json' } }));
 
 // Routes
+app.use(routes);
+
 app.get('/', (_request: Request, response: Response) => {
   response.json({
     message: "Welcome to Group 8's Backend API!",
