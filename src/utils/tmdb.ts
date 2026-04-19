@@ -2,7 +2,7 @@ export const fetchPaginatedTmdbData = async (
   baseUrl: string,
   endpoint: string,
   apiKey: string | undefined,
-  limitQuery: never,
+  limitQuery: unknown,
   queryParam: string = ''
 ): Promise<{ error?: string; status?: number; results?: Record<string, unknown>[] }> => {
   const urlSuffix = queryParam ? `&${queryParam}` : '';
