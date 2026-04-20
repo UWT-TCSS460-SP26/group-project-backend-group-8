@@ -9,6 +9,7 @@ export const fetchPaginatedTmdbData = async (
   status?: number;
   results?: Record<string, unknown>[];
   totalResults?: number;
+  maxResults?: number;
 }> => {
   const urlSuffix = queryParam ? `&${queryParam}` : '';
   const firstPageUrl = `${baseUrl}${endpoint}?api_key=${apiKey}${urlSuffix}&page=1`;
@@ -35,27 +36,50 @@ export const fetchPaginatedTmdbData = async (
     }
   }
 
+  // TMDB restricts pagination to a maximum of 500 pages (10,000 results)
+  // We must enforce this hard limit to prevent the server from crashing
+  // or TMDB blocking our IP for abuse.
+  const MAX_TMDB_PAGES = 500;
+  const MAX_RESULTS = MAX_TMDB_PAGES * 20;
+
+  let maxResults = totalResults;
+  if (totalResults > MAX_RESULTS) {
+    maxResults = MAX_RESULTS;
+  }
+
+  if (limit > MAX_RESULTS) {
+    limit = MAX_RESULTS;
+  }
+
   let allResults = firstPageData.results as Record<string, unknown>[];
-  const totalPagesToFetch = Math.ceil(limit / 20);
+  const totalPagesToFetch = Math.min(Math.ceil(limit / 20), MAX_TMDB_PAGES);
 
   if (totalPagesToFetch > 1) {
-    const fetchPromises = [];
-    for (let page = 2; page <= totalPagesToFetch; page++) {
-      fetchPromises.push(
-        fetch(`${baseUrl}${endpoint}?api_key=${apiKey}${urlSuffix}&page=${page}`).then((res) =>
-          res.json()
-        )
-      );
-    }
+    // Fetch remaining pages in small batches to avoid overwhelming Node.js memory
+    // and to respect TMDB rate limits.
+    const CONCURRENT_BATCH_SIZE = 10;
 
-    const remainingPagesData = await Promise.all(fetchPromises);
-    for (const pageData of remainingPagesData) {
-      const data = pageData as Record<string, unknown>;
-      if (data.results) {
-        allResults = allResults.concat(data.results as Record<string, unknown>[]);
+    for (let i = 2; i <= totalPagesToFetch; i += CONCURRENT_BATCH_SIZE) {
+      const fetchPromises = [];
+      const endPage = Math.min(i + CONCURRENT_BATCH_SIZE - 1, totalPagesToFetch);
+
+      for (let page = i; page <= endPage; page++) {
+        fetchPromises.push(
+          fetch(`${baseUrl}${endpoint}?api_key=${apiKey}${urlSuffix}&page=${page}`).then((res) =>
+            res.json()
+          )
+        );
+      }
+
+      const remainingPagesData = await Promise.all(fetchPromises);
+      for (const pageData of remainingPagesData) {
+        const data = pageData as Record<string, unknown>;
+        if (data.results) {
+          allResults = allResults.concat(data.results as Record<string, unknown>[]);
+        }
       }
     }
   }
 
-  return { results: allResults.slice(0, limit), totalResults };
+  return { results: allResults.slice(0, limit), totalResults, maxResults };
 };

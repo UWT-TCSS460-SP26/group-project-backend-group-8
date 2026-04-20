@@ -38,7 +38,7 @@ describe('GET /v1/tv/search', () => {
     const response = await request(app).get('/v1/tv/search').query({ title: 'Game of Thrones' });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Displaying 1 out of 1 results');
+    expect(response.body.message).toBe('Displaying 1 out of 1 available results');
     expect(response.body.results).toEqual([
       {
         id: 1399,
@@ -185,7 +185,7 @@ describe('GET /v1/tv/popular', () => {
     mockFetch.mockResolvedValue(mockTmdbResponse(searchPage));
     const response = await request(app).get('/v1/tv/popular');
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Displaying 1 out of 1 results');
+    expect(response.body.message).toBe('Displaying 1 out of 1 available results');
     expect(response.body.results[0].title).toBe('Game of Thrones');
     expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/tv/popular'));
   });

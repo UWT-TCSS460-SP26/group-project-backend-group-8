@@ -73,7 +73,7 @@ paths:
             type: integer
             minimum: 1
           description: Maximum number of results to return (must be a positive integer)
-          example: 10
+          example: 2
       responses:
         '200':
           description: List of matching movies
@@ -84,11 +84,24 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 'Displaying 10 out of 12 results'
+                    example: 'Displaying 2 out of 12 available results'
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/MovieSummary'
+              example:
+                message: 'Displaying 2 out of 12 available results'
+                results:
+                  - id: 27205
+                    title: 'Inception'
+                    synopsis: 'A thief who steals corporate secrets through dream-sharing technology.'
+                    releaseDate: '2010-07-16'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
+                  - id: 613096
+                    title: 'The Inception of Something'
+                    synopsis: 'A short documentary about inception.'
+                    releaseDate: '2019-10-10'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/something.jpg'
         '400':
           description: Missing or invalid query parameter
           content:
@@ -270,7 +283,7 @@ paths:
             type: integer
             minimum: 1
           description: Maximum number of results to return (must be a positive integer)
-          example: 20
+          example: 2
       responses:
         '200':
           description: List of popular movies
@@ -281,11 +294,24 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 'Displaying 20 out of 1125451 results'
+                    example: 'Displaying 2 out of 10000 available results'
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/MovieSummary'
+              example:
+                message: 'Displaying 2 out of 10000 available results'
+                results:
+                  - id: 27205
+                    title: 'Inception'
+                    synopsis: 'A thief who steals corporate secrets through dream-sharing technology.'
+                    releaseDate: '2010-07-16'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
+                  - id: 157336
+                    title: 'Interstellar'
+                    synopsis: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival."
+                    releaseDate: '2014-11-05'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/gEU2QniE6E77NI6lCU6MvrIdY08.jpg'
         '400':
           description: Invalid limit parameter
           content:
@@ -346,7 +372,7 @@ paths:
             type: integer
             minimum: 1
           description: Maximum number of results to return (must be a positive integer)
-          example: 10
+          example: 2
       responses:
         '200':
           description: List of matching TV series
@@ -357,11 +383,24 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 'Displaying 5 out of 5 results'
+                    example: 'Displaying 2 out of 5 available results'
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/TvSeriesSummary'
+              example:
+                message: 'Displaying 2 out of 5 available results'
+                results:
+                  - id: 1396
+                    title: 'Breaking Bad'
+                    synopsis: 'A chemistry teacher diagnosed with cancer turns to manufacturing drugs.'
+                    airDate: '2008-01-20'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
+                  - id: 232533
+                    title: 'Breaking Bad Fortune Teller'
+                    synopsis: 'During the Ming Dynasty, the emperor sets out for Xinjiang to advocate peace. Shortly after his absence, mysterious occurrences plague the palace and Daoist Tian Mu Tong is called to cast out demons. Together with eunuch Xiao Mo Gu and Jin Yi Wei leader Yun Xiang Rong, Mu Tong uncovers deep dark secrets and conspiracies hidden within conspiracies.'
+                    airDate: '2016-04-11'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/n8dKkbPkdEPFCFmjNvrUl1gUAYr.jpg'
         '400':
           description: Missing or invalid query parameter
           content:
@@ -554,11 +593,24 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 'Displaying 20 out of 219721 results'
+                    example: 'Displaying 20 out of 10000 available results'
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/TvSeriesSummary'
+              example:
+                message: 'Displaying 2 out of 10000 available results'
+                results:
+                  - id: 1396
+                    title: 'Breaking Bad'
+                    synopsis: 'A chemistry teacher diagnosed with cancer turns to manufacturing drugs.'
+                    airDate: '2008-01-20'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
+                  - id: 66732
+                    title: 'Stranger Things'
+                    synopsis: "A love letter to the '80s classics that captivated a generation."
+                    airDate: '2016-07-15'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/49WJfeN0moxb9IPfGn8m1Mg0.jpg'
         '400':
           description: Invalid limit parameter
           content:
