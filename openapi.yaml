@@ -28,7 +28,6 @@ tags:
     description: TMDB TV series proxy routes — search, details, and popular listings
 
 paths:
-
   # ── General ───────────────────────────────────────────────────
 
   /health:
@@ -478,7 +477,6 @@ paths:
 
 components:
   schemas:
-
     MovieSummary:
       type: object
       description: Simplified movie object transformed from the TMDB API response
