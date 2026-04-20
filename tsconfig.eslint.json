@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src/**/*", "tests/**/*", ".eslintrc.js"],
-  "exclude": ["node_modules", "dist"]
-}
