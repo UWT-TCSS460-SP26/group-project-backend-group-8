@@ -72,7 +72,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Maximum number of results to return (must be a positive integer)
+          description: Maximum number of results to return (must be a positive integer). Defaults to 20 or the actual number of results, whichever is smaller.
           example: 2
       responses:
         '200':
@@ -282,7 +282,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Maximum number of results to return (must be a positive integer)
+          description: Maximum number of results to return (must be a positive integer). Defaults to 20 if not provided.
           example: 2
       responses:
         '200':
@@ -371,7 +371,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Maximum number of results to return (must be a positive integer)
+          description: Maximum number of results to return (must be a positive integer). Defaults to 20 or the actual number of results, whichever is smaller.
           example: 2
       responses:
         '200':
@@ -581,7 +581,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Maximum number of results to return (must be a positive integer)
+          description: Maximum number of results to return (must be a positive integer). Defaults to 20 if not provided.
           example: 20
       responses:
         '200':
