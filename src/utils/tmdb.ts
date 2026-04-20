@@ -4,7 +4,12 @@ export const fetchPaginatedTmdbData = async (
   apiKey: string | undefined,
   limitQuery: unknown,
   queryParam: string = ''
-): Promise<{ error?: string; status?: number; results?: Record<string, unknown>[] }> => {
+): Promise<{
+  error?: string;
+  status?: number;
+  results?: Record<string, unknown>[];
+  totalResults?: number;
+}> => {
   const urlSuffix = queryParam ? `&${queryParam}` : '';
   const firstPageUrl = `${baseUrl}${endpoint}?api_key=${apiKey}${urlSuffix}&page=1`;
 
@@ -23,12 +28,10 @@ export const fetchPaginatedTmdbData = async (
 
   if (limitQuery) {
     limit = parseInt(String(limitQuery), 10);
-
+    // If the requested limit is greater than the total available results,
+    // gracefully cap the limit to the total results instead of throwing an error.
     if (limit > totalResults) {
-      return {
-        error: `Limit of ${limit} exceeds total results (${totalResults})`,
-        status: 400,
-      };
+      limit = totalResults;
     }
   }
 
@@ -54,5 +57,5 @@ export const fetchPaginatedTmdbData = async (
     }
   }
 
-  return { results: allResults.slice(0, limit) };
+  return { results: allResults.slice(0, limit), totalResults };
 };

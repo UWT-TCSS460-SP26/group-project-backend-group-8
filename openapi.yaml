@@ -80,9 +80,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MovieSummary'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 10 out of 12 results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieSummary'
         '400':
           description: Missing or invalid query parameter
           content:
@@ -104,16 +110,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: TMDB_API_KEY is not configured
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
         '502':
-          description: Failed to reach the movie database service
+          description: Failed to reach TMDB service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: Failed to reach movie database service
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
 
   /v1/movie/details/{id}:
     get:
@@ -161,12 +173,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
         '502':
-          description: Failed to reach the movie database service
+          description: Failed to reach TMDB service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
 
   /v1/movie/details:
     get:
@@ -199,18 +221,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingId:
+                  summary: Missing ID
+                  value:
+                    error: 'Parameter "id" is required (query or route param)'
+                invalidId:
+                  summary: Non-numeric ID
+                  value:
+                    error: 'Parameter "id" must be a positive integer'
         '500':
           description: TMDB_API_KEY is not configured
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
         '502':
-          description: Failed to reach the movie database service
+          description: Failed to reach TMDB service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
 
   /v1/movie/popular:
     get:
@@ -236,29 +277,48 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MovieSummary'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 20 out of 1125451 results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieSummary'
         '400':
           description: Invalid limit parameter
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: 'Parameter "limit" must be a positive integer'
+              examples:
+                invalidLimit:
+                  summary: Invalid Limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
         '500':
           description: TMDB_API_KEY is not configured
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
         '502':
-          description: Failed to reach the movie database service
+          description: Failed to reach TMDB service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
 
   # ── TV Series ─────────────────────────────────────────────────
 
@@ -293,9 +353,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TvSeriesSummary'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 5 out of 5 results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvSeriesSummary'
         '400':
           description: Missing or invalid query parameter
           content:
@@ -317,16 +383,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: TMDB_API_KEY is not configured
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
         '502':
-          description: Failed to reach the TV series database service
+          description: Failed to reach TMDB service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: Failed to reach TV series database service
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
 
   /v1/tv/details/{id}:
     get:
@@ -374,12 +446,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
         '502':
-          description: Failed to reach the TV series database service
+          description: Failed to reach TMDB service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
 
   /v1/tv/details:
     get:
@@ -412,18 +494,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingId:
+                  summary: Missing ID
+                  value:
+                    error: 'Parameter "id" is required (query or route param)'
+                invalidId:
+                  summary: Non-numeric ID
+                  value:
+                    error: 'Parameter "id" must be a positive integer'
         '500':
           description: TMDB_API_KEY is not configured
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
         '502':
-          description: Failed to reach the TV series database service
+          description: Failed to reach TMDB service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
 
   /v1/tv/popular:
     get:
@@ -449,29 +550,48 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TvSeriesSummary'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 20 out of 219721 results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvSeriesSummary'
         '400':
           description: Invalid limit parameter
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: 'Parameter "limit" must be a positive integer'
+              examples:
+                invalidLimit:
+                  summary: Invalid Limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
         '500':
           description: TMDB_API_KEY is not configured
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
         '502':
-          description: Failed to reach the TV series database service
+          description: Failed to reach TMDB service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
 
 # ── Schemas ───────────────────────────────────────────────────
 
@@ -537,4 +657,4 @@ components:
         error:
           type: string
           description: Human-readable error message
-          example: 'Parameter "title" is required (query param)'
+          example: 'An unexpected error occurred'
