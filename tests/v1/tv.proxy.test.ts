@@ -4,12 +4,11 @@ import { app } from '../../src/app';
 const mockFetch = jest.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
 
-const mockTmdbResponse = (body: unknown, init: { ok?: boolean; status?: number } = {}) =>
-  ({
-    ok: init.ok ?? true,
-    status: init.status ?? 200,
-    json: async () => body,
-  }) as unknown as Response;
+const mockTmdbResponse = (body: unknown, init: { ok?: boolean; status?: number } = {}) => ({
+  ok: init.ok ?? true,
+  status: init.status ?? 200,
+  json: async () => body,
+});
 
 const gotRaw = {
   id: 1399,
@@ -36,9 +35,7 @@ describe('GET /v1/tv/search', () => {
   it('returns 200 with transformed results when title is provided', async () => {
     mockFetch.mockResolvedValue(mockTmdbResponse(searchPage));
 
-    const response = await request(app)
-      .get('/v1/tv/search')
-      .query({ title: 'Game of Thrones' });
+    const response = await request(app).get('/v1/tv/search').query({ title: 'Game of Thrones' });
 
     expect(response.status).toBe(200);
     expect(response.body.message).toBe('Displaying 1 out of 1 results');
@@ -58,9 +55,7 @@ describe('GET /v1/tv/search', () => {
   // Happy path — limit caps results
   it('respects a numeric limit', async () => {
     mockFetch.mockResolvedValue(mockTmdbResponse(searchPage));
-    const response = await request(app)
-      .get('/v1/tv/search')
-      .query({ title: 'star', limit: '1' });
+    const response = await request(app).get('/v1/tv/search').query({ title: 'star', limit: '1' });
     expect(response.status).toBe(200);
     expect(response.body.results.length).toBeLessThanOrEqual(1);
   });
@@ -75,26 +70,20 @@ describe('GET /v1/tv/search', () => {
 
   // Sad path — non-numeric limit
   it('returns 400 when limit is not numeric', async () => {
-    const response = await request(app)
-      .get('/v1/tv/search')
-      .query({ title: 'star', limit: 'abc' });
+    const response = await request(app).get('/v1/tv/search').query({ title: 'star', limit: 'abc' });
     expect(response.status).toBe(400);
     expect(response.body.error).toMatch(/limit/i);
   });
 
   // Edge case — limit of zero
   it('returns 400 when limit is zero', async () => {
-    const response = await request(app)
-      .get('/v1/tv/search')
-      .query({ title: 'star', limit: '0' });
+    const response = await request(app).get('/v1/tv/search').query({ title: 'star', limit: '0' });
     expect(response.status).toBe(400);
   });
 
   // Edge case — negative limit
   it('returns 400 when limit is negative', async () => {
-    const response = await request(app)
-      .get('/v1/tv/search')
-      .query({ title: 'star', limit: '-3' });
+    const response = await request(app).get('/v1/tv/search').query({ title: 'star', limit: '-3' });
     expect(response.status).toBe(400);
   });
 

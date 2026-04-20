@@ -4,12 +4,11 @@ import { app } from '../../src/app';
 const mockFetch = jest.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
 
-const mockTmdbResponse = (body: unknown, init: { ok?: boolean; status?: number } = {}) =>
-  ({
-    ok: init.ok ?? true,
-    status: init.status ?? 200,
-    json: async () => body,
-  }) as unknown as Response;
+const mockTmdbResponse = (body: unknown, init: { ok?: boolean; status?: number } = {}) => ({
+  ok: init.ok ?? true,
+  status: init.status ?? 200,
+  json: async () => body,
+});
 
 const fightClubRaw = {
   id: 550,
