@@ -41,7 +41,7 @@ export const searchTvSeries = async (request: Request, response: Response) => {
     }));
 
     response.json({
-      message: `Displaying ${transformedResults.length} out of ${result.totalResults} results`,
+      message: `Displaying ${transformedResults.length} out of ${result.maxResults} available results`,
       results: transformedResults,
     });
   } catch (_error) {
@@ -98,7 +98,7 @@ export const getPopularTvSeries = async (request: Request, response: Response) =
     }));
 
     response.json({
-      message: `Displaying ${transformedResults.length} out of ${result.totalResults} results`,
+      message: `Displaying ${transformedResults.length} out of ${result.maxResults} available results`,
       results: transformedResults,
     });
   } catch (_error) {

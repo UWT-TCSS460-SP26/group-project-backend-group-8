@@ -38,7 +38,7 @@ describe('GET /v1/movie/search', () => {
     const response = await request(app).get('/v1/movie/search').query({ title: 'Fight Club' });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Displaying 1 out of 1 results');
+    expect(response.body.message).toBe('Displaying 1 out of 1 available results');
     expect(response.body.results).toEqual([
       {
         id: 550,
@@ -193,7 +193,7 @@ describe('GET /v1/movie/popular', () => {
     mockFetch.mockResolvedValue(mockTmdbResponse(searchPage));
     const response = await request(app).get('/v1/movie/popular');
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Displaying 1 out of 1 results');
+    expect(response.body.message).toBe('Displaying 1 out of 1 available results');
     expect(response.body.results[0].title).toBe('Fight Club');
     expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/movie/popular'));
   });
