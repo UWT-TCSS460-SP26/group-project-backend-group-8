@@ -3,36 +3,33 @@ info:
   title: TCSS 460 Group 8 API
   description: |
     **Team:** Group 8
-    **Deployed URL:** Not yet deployed
+    **Deployed URL:** https://tcss460-team-8-api.onrender.com/
 
     A RESTful API for the TCSS 460 Group 8 project.
+
+    All `/v1/movie` and `/v1/tv` routes proxy the [TMDB API](https://www.themoviedb.org/)
+    with the API key hidden server-side. Responses are transformed into simplified summaries.
+
+    **Shared middleware applied to all proxy routes:**
+    - `requireEnvVar('TMDB_API_KEY')` — returns `500` if the API key is not configured.
+    - Route-specific validation (`requireTitle`, `requireId`, `validateNumericId`, `validateNumericLimit`) — returns `400` on invalid input.
   version: 0.1.0
 
 servers:
-  - url: http://localhost:3000
-    description: Local development
+  - url: https://tcss460-team-8-api.onrender.com/
+    description: Express API server hosted on Render
 
 tags:
   - name: General
     description: General-purpose routes
+  - name: Movies
+    description: TMDB movie proxy routes — search, details, and popular listings
+  - name: TV Series
+    description: TMDB TV series proxy routes — search, details, and popular listings
 
 paths:
-  /hello:
-    get:
-      tags: [General]
-      summary: Hello
-      description: Returns a greeting message.
-      responses:
-        '200':
-          description: A greeting message
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Hello, TCSS 460!'
+  # ── General ───────────────────────────────────────────────────
+
   /health:
     get:
       tags: [General]
@@ -46,6 +43,618 @@ paths:
               schema:
                 type: object
                 properties:
+                  status:
+                    type: string
+                    example: alive
+
+  # ── Movies ────────────────────────────────────────────────────
+
+  /v1/movie/search:
+    get:
+      tags: [Movies]
+      summary: Search movies by title
+      description: |
+        Searches TMDB for movies matching the given title. Results are transformed
+        into a simplified `MovieSummary` shape.
+
+        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireTitle`, `validateNumericLimit`
+      parameters:
+        - name: title
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Movie title to search for
+          example: Inception
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Maximum number of results to return (must be a positive integer)
+          example: 10
+      responses:
+        '200':
+          description: List of matching movies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
                   message:
                     type: string
-                    example: 'response is working'
+                    example: 'Displaying 10 out of 12 results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieSummary'
+        '400':
+          description: Missing or invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingTitle:
+                  summary: Missing title
+                  value:
+                    error: 'Parameter "title" is required (query param)'
+                invalidLimit:
+                  summary: Invalid limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
+        '500':
+          description: TMDB_API_KEY is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
+        '502':
+          description: Failed to reach TMDB service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
+
+  /v1/movie/details/{id}:
+    get:
+      tags: [Movies]
+      summary: Get movie details by route param
+      description: |
+        Returns detailed information for a single movie identified by its TMDB ID,
+        passed as a route parameter.
+
+        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: TMDB movie ID (must be a positive integer)
+          example: 27205
+      responses:
+        '200':
+          description: Movie details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSummary'
+        '400':
+          description: Missing or invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingId:
+                  summary: Missing ID
+                  value:
+                    error: 'Parameter "id" is required (query or route param)'
+                invalidId:
+                  summary: Non-numeric ID
+                  value:
+                    error: 'Parameter "id" must be a positive integer'
+        '500':
+          description: TMDB_API_KEY is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
+        '502':
+          description: Failed to reach TMDB service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
+
+  /v1/movie/details:
+    get:
+      tags: [Movies]
+      summary: Get movie details by query param
+      description: |
+        Same as `GET /v1/movie/details/{id}` but the TMDB movie ID is passed as
+        a query parameter instead of a route parameter.
+
+        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: TMDB movie ID (must be a positive integer)
+          example: 27205
+      responses:
+        '200':
+          description: Movie details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSummary'
+        '400':
+          description: Missing or invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingId:
+                  summary: Missing ID
+                  value:
+                    error: 'Parameter "id" is required (query or route param)'
+                invalidId:
+                  summary: Non-numeric ID
+                  value:
+                    error: 'Parameter "id" must be a positive integer'
+        '500':
+          description: TMDB_API_KEY is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
+        '502':
+          description: Failed to reach TMDB service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
+
+  /v1/movie/popular:
+    get:
+      tags: [Movies]
+      summary: Get popular movies
+      description: |
+        Returns the current list of popular movies from TMDB, transformed into
+        simplified `MovieSummary` objects.
+
+        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `validateNumericLimit`
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Maximum number of results to return (must be a positive integer)
+          example: 20
+      responses:
+        '200':
+          description: List of popular movies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 20 out of 1125451 results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieSummary'
+        '400':
+          description: Invalid limit parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidLimit:
+                  summary: Invalid Limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
+        '500':
+          description: TMDB_API_KEY is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
+        '502':
+          description: Failed to reach TMDB service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
+
+  # ── TV Series ─────────────────────────────────────────────────
+
+  /v1/tv/search:
+    get:
+      tags: [TV Series]
+      summary: Search TV series by title
+      description: |
+        Searches TMDB for TV series matching the given title. Results are transformed
+        into a simplified `TvSeriesSummary` shape.
+
+        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireTitle`, `validateNumericLimit`
+      parameters:
+        - name: title
+          in: query
+          required: true
+          schema:
+            type: string
+          description: TV series title to search for
+          example: Breaking Bad
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Maximum number of results to return (must be a positive integer)
+          example: 10
+      responses:
+        '200':
+          description: List of matching TV series
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 5 out of 5 results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvSeriesSummary'
+        '400':
+          description: Missing or invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingTitle:
+                  summary: Missing title
+                  value:
+                    error: 'Parameter "title" is required (query param)'
+                invalidLimit:
+                  summary: Invalid limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
+        '500':
+          description: TMDB_API_KEY is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
+        '502':
+          description: Failed to reach TMDB service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
+
+  /v1/tv/details/{id}:
+    get:
+      tags: [TV Series]
+      summary: Get TV series details by route param
+      description: |
+        Returns detailed information for a single TV series identified by its TMDB ID,
+        passed as a route parameter.
+
+        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: TMDB TV series ID (must be a positive integer)
+          example: 1396
+      responses:
+        '200':
+          description: TV series details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TvSeriesSummary'
+        '400':
+          description: Missing or invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingId:
+                  summary: Missing ID
+                  value:
+                    error: 'Parameter "id" is required (query or route param)'
+                invalidId:
+                  summary: Non-numeric ID
+                  value:
+                    error: 'Parameter "id" must be a positive integer'
+        '500':
+          description: TMDB_API_KEY is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
+        '502':
+          description: Failed to reach TMDB service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
+
+  /v1/tv/details:
+    get:
+      tags: [TV Series]
+      summary: Get TV series details by query param
+      description: |
+        Same as `GET /v1/tv/details/{id}` but the TMDB TV series ID is passed as
+        a query parameter instead of a route parameter.
+
+        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: TMDB TV series ID (must be a positive integer)
+          example: 1396
+      responses:
+        '200':
+          description: TV series details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TvSeriesSummary'
+        '400':
+          description: Missing or invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingId:
+                  summary: Missing ID
+                  value:
+                    error: 'Parameter "id" is required (query or route param)'
+                invalidId:
+                  summary: Non-numeric ID
+                  value:
+                    error: 'Parameter "id" must be a positive integer'
+        '500':
+          description: TMDB_API_KEY is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
+        '502':
+          description: Failed to reach TMDB service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
+
+  /v1/tv/popular:
+    get:
+      tags: [TV Series]
+      summary: Get popular TV series
+      description: |
+        Returns the current list of popular TV series from TMDB, transformed into
+        simplified `TvSeriesSummary` objects.
+
+        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `validateNumericLimit`
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Maximum number of results to return (must be a positive integer)
+          example: 20
+      responses:
+        '200':
+          description: List of popular TV series
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 20 out of 219721 results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvSeriesSummary'
+        '400':
+          description: Invalid limit parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidLimit:
+                  summary: Invalid Limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
+        '500':
+          description: TMDB_API_KEY is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: TMDB_API_KEY is not configured
+        '502':
+          description: Failed to reach TMDB service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach TMDB service
+
+# ── Schemas ───────────────────────────────────────────────────
+
+components:
+  schemas:
+    MovieSummary:
+      type: object
+      description: Simplified movie object transformed from the TMDB API response
+      properties:
+        id:
+          type: integer
+          description: TMDB movie ID
+          example: 27205
+        title:
+          type: string
+          description: Movie title
+          example: Inception
+        synopsis:
+          type: string
+          description: Brief plot overview
+          example: A thief who steals corporate secrets through dream-sharing technology.
+        releaseDate:
+          type: string
+          format: date
+          description: Theatrical release date (YYYY-MM-DD)
+          example: '2010-07-16'
+        posterUrl:
+          type: string
+          format: uri
+          description: Full URL to the original-size poster image
+          example: 'https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
+
+    TvSeriesSummary:
+      type: object
+      description: Simplified TV series object transformed from the TMDB API response
+      properties:
+        id:
+          type: integer
+          description: TMDB TV series ID
+          example: 1396
+        title:
+          type: string
+          description: Series name
+          example: Breaking Bad
+        synopsis:
+          type: string
+          description: Brief series overview
+          example: A chemistry teacher diagnosed with cancer turns to manufacturing drugs.
+        airDate:
+          type: string
+          format: date
+          description: First air date (YYYY-MM-DD)
+          example: '2008-01-20'
+        posterUrl:
+          type: string
+          format: uri
+          description: Full URL to the original-size poster image
+          example: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: 'An unexpected error occurred'

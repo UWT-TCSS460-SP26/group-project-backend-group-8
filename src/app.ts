@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import YAML from 'yaml';
+import { routes } from './routes';
 import { apiReference } from '@scalar/express-api-reference';
 
 const app = express();
@@ -17,6 +18,16 @@ app.get('/openapi.json', (_request: Request, response: Response) => {
   response.json(spec);
 });
 app.use('/api-docs', apiReference({ spec: { url: '/openapi.json' } }));
+
+// Routes
+app.use(routes);
+
+app.get('/', (_request: Request, response: Response) => {
+  response.json({
+    message: "Welcome to Group 8's Backend API!",
+    docs: 'Navigate to /api-docs to view the OpenAPI documentation',
+  });
+});
 
 app.get('/health', (_request: Request, response: Response) => {
   response.status(200).json({ status: 'alive' });
