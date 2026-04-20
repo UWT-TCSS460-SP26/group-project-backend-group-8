@@ -40,9 +40,12 @@ export const searchMovie = async (request: Request, response: Response) => {
       posterUrl: `${IMAGE_URL}${movie.poster_path}`,
     }));
 
-    response.json(transformedResults);
+    response.json({
+      message: `Displaying ${transformedResults.length} out of ${result.totalResults} results`,
+      results: transformedResults,
+    });
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach movie database service' });
+    response.status(502).json({ error: 'Failed to reach TMDB service' });
   }
 };
 
@@ -55,7 +58,7 @@ export const getMovieDetails = async (request: Request, response: Response) => {
     const data = (await result.json()) as Record<string, unknown>;
 
     if (!result.ok) {
-      response.status(result.status).json({ error: data.message || 'Movie database API error' });
+      response.status(result.status).json({ error: data.message || 'TMDB API error' });
       return;
     }
 
@@ -70,7 +73,7 @@ export const getMovieDetails = async (request: Request, response: Response) => {
 
     response.json(transformedResult);
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach movie database service' });
+    response.status(502).json({ error: 'Failed to reach TMDB service' });
   }
 };
 
@@ -94,8 +97,11 @@ export const getPopularMovies = async (request: Request, response: Response) => 
       posterUrl: `${IMAGE_URL}${movie.poster_path}`,
     }));
 
-    response.json(transformedResults);
+    response.json({
+      message: `Displaying ${transformedResults.length} out of ${result.totalResults} results`,
+      results: transformedResults,
+    });
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach movie database service' });
+    response.status(502).json({ error: 'Failed to reach TMDB service' });
   }
 };
