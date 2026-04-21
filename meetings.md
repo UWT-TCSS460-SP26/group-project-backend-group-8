@@ -178,10 +178,27 @@ _Questions to Be Addressed Before or at Next Meeting._
 For the group
 
 Q: Should we allow search by keyword (Star Wars) rather than the full title (Star Wars: Episode IV - A New Hope)?  
+A: Yes.
+
 Q: Should we cut off the popular movies/shows list based on minimum rating?  
-Q: Does everyone need their own TMDB API key? If so, which one is used in Render?
+A: Not for now. Default to 20 per request if limit is not specified.
+
+Q: What is meant by render a response "card"?  
+A: JSON response with required fields for frontend to use.
+
+Q: For poster image, do we forward the URL to the frontend?  
+A: Yes.
+
+Q: Does popular movies/tv shows return the response card? Is it just a filtered JSON response?  
+A: Yes.
 
 For the professor
 
-Q: What is meant by render a response "card"?  
-Q: Does popular movies/tv shows return the response card? Is it just a filtered JSON response?
+Q: Does everyone need their own TMDB API key? If so, which one is used in Render?  
+A: Yes, for development work on local machines. A separate key can even be generated specifically for render.
+
+Q: What is a proper file structure?  
+A: Follow the class demos closely. Movies and TV Shows should have separate test and controller files. One validation file, unless unique. Protected directory is for when we use JSON web token and JWT middleware.
+
+Q: Do we need versioning? (v1, v2, etc.)  
+A: Routes for endpoints can be on “v1” even though we are not incrementing to v2 in this class. This is good practice and lays the structure for future development.
