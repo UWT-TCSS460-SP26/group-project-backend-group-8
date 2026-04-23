@@ -15,7 +15,6 @@ tvSeriesRouter.use(requireEnvVar('TMDB_API_KEY'));
 
 tvSeriesRouter.get('/search', requireTitle, validateNumericLimit, searchTvSeries);
 tvSeriesRouter.get('/details/:id', requireId, validateNumericId, getTvSeriesDetails);
-tvSeriesRouter.get('/details/', requireId, validateNumericId, getTvSeriesDetails);
 tvSeriesRouter.get('/popular', validateNumericLimit, getPopularTvSeries);
 
 export { tvSeriesRouter };

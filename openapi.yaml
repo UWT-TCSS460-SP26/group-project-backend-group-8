@@ -143,10 +143,9 @@ paths:
   /v1/movie/details/{id}:
     get:
       tags: [Movies]
-      summary: Get movie details by route param
+      summary: Get movie details
       description: |
-        Returns detailed information for a single movie identified by its TMDB ID,
-        passed as a route parameter.
+        Returns detailed information for a single movie identified by its TMDB ID.
 
         **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
       parameters:
@@ -175,70 +174,7 @@ paths:
                 missingId:
                   summary: Missing ID
                   value:
-                    error: 'Parameter "id" is required (query or route param)'
-                invalidId:
-                  summary: Non-numeric ID
-                  value:
-                    error: 'Parameter "id" must be a positive integer'
-        '500':
-          description: TMDB_API_KEY is not configured
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingApiKey:
-                  summary: Missing API Key
-                  value:
-                    error: TMDB_API_KEY is not configured
-        '502':
-          description: Failed to reach TMDB service
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                serviceDown:
-                  summary: Service Unavailable
-                  value:
-                    error: Failed to reach TMDB service
-
-  /v1/movie/details:
-    get:
-      tags: [Movies]
-      summary: Get movie details by query param
-      description: |
-        Same as `GET /v1/movie/details/{id}` but the TMDB movie ID is passed as
-        a query parameter instead of a route parameter.
-
-        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
-      parameters:
-        - name: id
-          in: query
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: TMDB movie ID (must be a positive integer)
-          example: 27205
-      responses:
-        '200':
-          description: Movie details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MovieSummary'
-        '400':
-          description: Missing or invalid ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingId:
-                  summary: Missing ID
-                  value:
-                    error: 'Parameter "id" is required (query or route param)'
+                    error: 'Parameter "id" is required'
                 invalidId:
                   summary: Non-numeric ID
                   value:
@@ -442,10 +378,9 @@ paths:
   /v1/tv/details/{id}:
     get:
       tags: [TV Series]
-      summary: Get TV series details by route param
+      summary: Get TV series details
       description: |
-        Returns detailed information for a single TV series identified by its TMDB ID,
-        passed as a route parameter.
+        Returns detailed information for a single TV series identified by its TMDB ID.
 
         **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
       parameters:
@@ -474,70 +409,7 @@ paths:
                 missingId:
                   summary: Missing ID
                   value:
-                    error: 'Parameter "id" is required (query or route param)'
-                invalidId:
-                  summary: Non-numeric ID
-                  value:
-                    error: 'Parameter "id" must be a positive integer'
-        '500':
-          description: TMDB_API_KEY is not configured
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingApiKey:
-                  summary: Missing API Key
-                  value:
-                    error: TMDB_API_KEY is not configured
-        '502':
-          description: Failed to reach TMDB service
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                serviceDown:
-                  summary: Service Unavailable
-                  value:
-                    error: Failed to reach TMDB service
-
-  /v1/tv/details:
-    get:
-      tags: [TV Series]
-      summary: Get TV series details by query param
-      description: |
-        Same as `GET /v1/tv/details/{id}` but the TMDB TV series ID is passed as
-        a query parameter instead of a route parameter.
-
-        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
-      parameters:
-        - name: id
-          in: query
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: TMDB TV series ID (must be a positive integer)
-          example: 1396
-      responses:
-        '200':
-          description: TV series details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TvSeriesSummary'
-        '400':
-          description: Missing or invalid ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingId:
-                  summary: Missing ID
-                  value:
-                    error: 'Parameter "id" is required (query or route param)'
+                    error: 'Parameter "id" is required'
                 invalidId:
                   summary: Non-numeric ID
                   value:

@@ -27,12 +27,12 @@ export const requireTitle = (request: Request, response: Response, next: NextFun
 };
 
 /**
- * Validates that 'id' is present as either a route param or a query param.
+ * Validates that the 'id' route param is present.
  */
 export const requireId = (request: Request, response: Response, next: NextFunction) => {
-  const id = request.query.id || request.params.id;
+  const id = request.params.id;
   if (!id) {
-    response.status(400).json({ error: 'Parameter "id" is required (query or route param)' });
+    response.status(400).json({ error: 'Parameter "id" is required (route param)' });
     return;
   }
   next();
