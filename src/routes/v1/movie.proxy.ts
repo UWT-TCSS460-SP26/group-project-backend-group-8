@@ -15,7 +15,6 @@ movieRouter.use(requireEnvVar('TMDB_API_KEY'));
 
 movieRouter.get('/search', requireTitle, validateNumericLimit, searchMovie);
 movieRouter.get('/details/:id', requireId, validateNumericId, getMovieDetails);
-movieRouter.get('/details/', requireId, validateNumericId, getMovieDetails);
 movieRouter.get('/popular', validateNumericLimit, getPopularMovies);
 
 export { movieRouter };
