@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+/// Discriminator: whether a rating/review targets a movie or TV show.
+/// Values must match TMDB's media_type strings exactly so client code
+/// can pass them through without mapping.
+enum MediaType {
+  movie
+  tv
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ratings Rating[]
+  reviews Review[]
+}
+
+/// One rating per (user, tmdbId, mediaType) tuple — enforced by unique index.
+/// Re-submitting the same tuple upserts the score rather than creating a duplicate row.
+model Rating {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tmdbId    Int
+  mediaType MediaType
+  /// 1.0–10.0 inclusive
+  score     Float
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Enforces the upsert constraint: one score per user per title.
+  @@unique([userId, tmdbId, mediaType])
+  /// Speeds up public GET /ratings?tmdbId=&mediaType= lookups.
+  @@index([tmdbId, mediaType])
+}
+
+/// Reviews are separate from ratings so a user can write prose without
+/// also supplying a numeric score, and vice-versa.
+model Review {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tmdbId    Int
+  mediaType MediaType
+  /// Optional headline; body is always required.
+  title     String?
+  body      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tmdbId, mediaType])
+}
