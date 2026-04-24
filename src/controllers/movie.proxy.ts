@@ -45,7 +45,7 @@ export const searchMovie = async (request: Request, response: Response) => {
       results: transformedResults,
     });
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach TMDB service' });
+    response.status(502).json({ error: 'Failed to reach service' });
   }
 };
 
@@ -73,7 +73,7 @@ export const getMovieDetails = async (request: Request, response: Response) => {
 
     response.json(transformedResult);
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach TMDB service' });
+    response.status(502).json({ error: 'Failed to reach service' });
   }
 };
 
@@ -102,6 +102,6 @@ export const getPopularMovies = async (request: Request, response: Response) => 
       results: transformedResults,
     });
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach TMDB service' });
+    response.status(502).json({ error: 'Failed to reach service' });
   }
 };
