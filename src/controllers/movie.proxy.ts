@@ -50,7 +50,7 @@ export const searchMovie = async (request: Request, response: Response) => {
 };
 
 export const getMovieDetails = async (request: Request, response: Response) => {
-  const id = request.params.id || request.query.id;
+  const id = request.params.id;
   const apiKey = process.env.TMDB_API_KEY;
 
   try {
