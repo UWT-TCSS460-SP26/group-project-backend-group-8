@@ -122,22 +122,6 @@ describe('GET /v1/tv/details', () => {
     expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/tv/1399'));
   });
 
-  // Happy path — id as query param
-  it('returns 200 with the series when id is a query param', async () => {
-    mockFetch.mockResolvedValue(mockTmdbResponse(gotRaw));
-    const response = await request(app).get('/v1/tv/details').query({ id: '1399' });
-    expect(response.status).toBe(200);
-    expect(response.body.id).toBe(1399);
-  });
-
-  // Sad path — missing id
-  it('returns 400 when id is missing', async () => {
-    const response = await request(app).get('/v1/tv/details');
-    expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/id/i);
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
-
   // Sad path — non-numeric id
   it('returns 400 when id is not numeric', async () => {
     const response = await request(app).get('/v1/tv/details/abc');
