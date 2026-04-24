@@ -227,7 +227,7 @@ Discussed Checkoff schedule to ensure we can communicate earlier
 
 Review Table attributes/ Primary Key
 
-Primary key = Auto Increment Identifier 
+Primary key = Auto Increment Identifier
 
 Entity Reviews
 Primary Key - ReviewID (Serial)
@@ -242,7 +242,6 @@ Date_Updated (TIMESTAMPZ)
 Foreign Keys
 UserId
 MovieId
-
 
 Entity Users:
 Primary Key - ID (BigSerial)
@@ -260,17 +259,16 @@ Media type (enum)
 MediaID (int)
 Score (Numeric)
 
-Entity:  (
-    order_id INT,
-    product_id INT,
-    quantity INT,
-    PRIMARY KEY (order_id, product_id)
+Entity: (
+order_id INT,
+product_id INT,
+quantity INT,
+PRIMARY KEY (order_id, product_id)
 );
-
 
 ## Agenda Item 4:
 
-Indexes for fast retrival 
+Indexes for fast retrival
 
 Essential Indexes for Ratings Tables
 Primary Key (id or (user_id, item_id)): Ensures uniqueness of a user's rating for a specific item.
@@ -281,20 +279,20 @@ Possibly ask if we dont need?
 easy to do tho so Caleb will handle if we do
 
 ## Agenda Item 5:
- 
- Implement and put Delete/Update endpoints 
- aka make handler and api doc
+
+Implement and put Delete/Update endpoints
+aka make handler and api doc
 
 upsert dem
 return 403 if not authorized to delete review
 
 ## Agenda Item 6:
+
 Update prisma schema file
 
 User Story Delegation:
 Setup and Prisma: Caleb
 PSQL DB creation -Caleb
-
 
 As a user, I want to submit a rating for a movie or show so that my opinion contributes to the community's picture of the content
 
