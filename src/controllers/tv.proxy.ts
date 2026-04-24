@@ -45,7 +45,7 @@ export const searchTvSeries = async (request: Request, response: Response) => {
       results: transformedResults,
     });
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach TMDB service' });
+    response.status(502).json({ error: 'Failed to reach service' });
   }
 };
 
@@ -73,7 +73,7 @@ export const getTvSeriesDetails = async (request: Request, response: Response) =
 
     response.json(transformedResult);
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach TMDB service' });
+    response.status(502).json({ error: 'Failed to reach service' });
   }
 };
 
@@ -102,6 +102,6 @@ export const getPopularTvSeries = async (request: Request, response: Response) =
       results: transformedResults,
     });
   } catch (_error) {
-    response.status(502).json({ error: 'Failed to reach TMDB service' });
+    response.status(502).json({ error: 'Failed to reach service' });
   }
 };
