@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, sprint-2-persistence]
+    branches: [main]
   push:
-    branches: [main, sprint-2-persistence]
+    branches: [main]
 
 jobs:
   lint-and-test:
