@@ -48,7 +48,7 @@ router.post('/dev-login', async (request: Request, response: Response): Promise<
   }
 
   const { username, email } = request.body as { username?: string; email?: string };
-  if (!username || typeof username !== 'string') {
+  if (!username) {
     response.status(400).json({ error: 'username is required' });
     return;
   }
@@ -65,12 +65,12 @@ router.post('/dev-login', async (request: Request, response: Response): Promise<
 
   const token = jwt.sign(
     {
-      sub: user.id,
+      sub: String(user.id),
       email: user.email,
       role: user.role,
     },
     secret,
-    { expiresIn: '24h' },
+    { expiresIn: '24h' }
   );
 
   response.json({ token });

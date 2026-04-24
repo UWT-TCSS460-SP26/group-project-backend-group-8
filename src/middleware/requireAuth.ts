@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
 export interface AuthenticatedUser {
-  sub: number;
+  sub: string;
   email: string;
   role: string;
 }
@@ -21,11 +21,7 @@ declare global {
  * attaches the decoded payload to request.user. Responds 401 when the
  * header is missing, malformed, or the token is invalid/expired.
  */
-export const requireAuth = (
-  request: Request,
-  response: Response,
-  next: NextFunction,
-): void => {
+export const requireAuth = (request: Request, response: Response, next: NextFunction): void => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     response.status(500).json({ error: 'JWT_SECRET is not configured' });
@@ -41,8 +37,7 @@ export const requireAuth = (
   const token = header.slice('Bearer '.length).trim();
 
   try {
-    const payload = jwt.verify(token, secret) as AuthenticatedUser;
-    request.user = payload;
+    request.user = jwt.verify(token, secret) as AuthenticatedUser;
     next();
   } catch {
     response.status(401).json({ error: 'Invalid or expired token' });
