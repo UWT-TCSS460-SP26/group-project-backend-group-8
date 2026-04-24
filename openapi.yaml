@@ -3,16 +3,11 @@ info:
   title: TCSS 460 Group 8 API
   description: |
     **Team:** Group 8
+
     **Deployed URL:** https://tcss460-team-8-api.onrender.com/
 
-    A RESTful API for the TCSS 460 Group 8 project.
+    Welcome to version 1 of The Movie & Show Reviews Database API--a RESTful API for the TCSS 460 Group 8 project. This is where you will find the list of currently available methods for our movie and tv reviews API.
 
-    All `/v1/movie` and `/v1/tv` routes proxy the [TMDB API](https://www.themoviedb.org/)
-    with the API key hidden server-side. Responses are transformed into simplified summaries.
-
-    **Shared middleware applied to all proxy routes:**
-    - `requireEnvVar('TMDB_API_KEY')` — returns `500` if the API key is not configured.
-    - Route-specific validation (`requireTitle`, `requireId`, `validateNumericId`, `validateNumericLimit`) — returns `400` on invalid input.
   version: 0.1.0
 
 servers:
@@ -23,9 +18,9 @@ tags:
   - name: General
     description: General-purpose routes
   - name: Movies
-    description: TMDB movie proxy routes — search, details, and popular listings
+    description: Movie proxy routes — search, details, and popular listings
   - name: TV Series
-    description: TMDB TV series proxy routes — search, details, and popular listings
+    description: TV series proxy routes — search, details, and popular listings
 
 paths:
   # ── General ───────────────────────────────────────────────────
@@ -54,10 +49,8 @@ paths:
       tags: [Movies]
       summary: Search movies by title
       description: |
-        Searches TMDB for movies matching the given title. Results are transformed
+        Searches for movies matching the given title. Results are transformed
         into a simplified `MovieSummary` shape.
-
-        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireTitle`, `validateNumericLimit`
       parameters:
         - name: title
           in: query
@@ -72,6 +65,7 @@ paths:
           schema:
             type: integer
             minimum: 1
+            default: 20
           description: Maximum number of results to return (must be a positive integer). Defaults to 20 or the actual number of results, whichever is smaller.
           example: 2
       responses:
@@ -118,7 +112,7 @@ paths:
                   value:
                     error: 'Parameter "limit" must be a positive integer'
         '500':
-          description: TMDB_API_KEY is not configured
+          description: API key is not configured
           content:
             application/json:
               schema:
@@ -127,9 +121,9 @@ paths:
                 missingApiKey:
                   summary: Missing API Key
                   value:
-                    error: TMDB_API_KEY is not configured
+                    error: API key is not configured
         '502':
-          description: Failed to reach TMDB service
+          description: Failed to reach service
           content:
             application/json:
               schema:
@@ -138,16 +132,14 @@ paths:
                 serviceDown:
                   summary: Service Unavailable
                   value:
-                    error: Failed to reach TMDB service
+                    error: Failed to reach service
 
   /v1/movie/details/{id}:
     get:
       tags: [Movies]
       summary: Get movie details
       description: |
-        Returns detailed information for a single movie identified by its TMDB ID.
-
-        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
+        Returns detailed information for a single movie identified by its ID.
       parameters:
         - name: id
           in: path
@@ -155,7 +147,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: TMDB movie ID (must be a positive integer)
+          description: Movie ID (must be a positive integer)
           example: 27205
       responses:
         '200':
@@ -180,7 +172,7 @@ paths:
                   value:
                     error: 'Parameter "id" must be a positive integer'
         '500':
-          description: TMDB_API_KEY is not configured
+          description: API key is not configured
           content:
             application/json:
               schema:
@@ -189,9 +181,9 @@ paths:
                 missingApiKey:
                   summary: Missing API Key
                   value:
-                    error: TMDB_API_KEY is not configured
+                    error: API key is not configured
         '502':
-          description: Failed to reach TMDB service
+          description: Failed to reach service
           content:
             application/json:
               schema:
@@ -200,17 +192,15 @@ paths:
                 serviceDown:
                   summary: Service Unavailable
                   value:
-                    error: Failed to reach TMDB service
+                    error: Failed to reach service
 
   /v1/movie/popular:
     get:
       tags: [Movies]
       summary: Get popular movies
       description: |
-        Returns the current list of popular movies from TMDB, transformed into
+        Returns the current list of popular movies, transformed into
         simplified `MovieSummary` objects.
-
-        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `validateNumericLimit`
       parameters:
         - name: limit
           in: query
@@ -218,6 +208,7 @@ paths:
           schema:
             type: integer
             minimum: 1
+            default: 20
           description: Maximum number of results to return (must be a positive integer). Defaults to 20 if not provided.
           example: 2
       responses:
@@ -260,7 +251,7 @@ paths:
                   value:
                     error: 'Parameter "limit" must be a positive integer'
         '500':
-          description: TMDB_API_KEY is not configured
+          description: API key is not configured
           content:
             application/json:
               schema:
@@ -269,9 +260,9 @@ paths:
                 missingApiKey:
                   summary: Missing API Key
                   value:
-                    error: TMDB_API_KEY is not configured
+                    error: API key is not configured
         '502':
-          description: Failed to reach TMDB service
+          description: Failed to reach service
           content:
             application/json:
               schema:
@@ -280,7 +271,7 @@ paths:
                 serviceDown:
                   summary: Service Unavailable
                   value:
-                    error: Failed to reach TMDB service
+                    error: Failed to reach service
 
   # ── TV Series ─────────────────────────────────────────────────
 
@@ -289,10 +280,8 @@ paths:
       tags: [TV Series]
       summary: Search TV series by title
       description: |
-        Searches TMDB for TV series matching the given title. Results are transformed
+        Searches for TV series matching the given title. Results are transformed
         into a simplified `TvSeriesSummary` shape.
-
-        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireTitle`, `validateNumericLimit`
       parameters:
         - name: title
           in: query
@@ -307,6 +296,7 @@ paths:
           schema:
             type: integer
             minimum: 1
+            default: 20
           description: Maximum number of results to return (must be a positive integer). Defaults to 20 or the actual number of results, whichever is smaller.
           example: 2
       responses:
@@ -353,7 +343,7 @@ paths:
                   value:
                     error: 'Parameter "limit" must be a positive integer'
         '500':
-          description: TMDB_API_KEY is not configured
+          description: API key is not configured
           content:
             application/json:
               schema:
@@ -362,9 +352,9 @@ paths:
                 missingApiKey:
                   summary: Missing API Key
                   value:
-                    error: TMDB_API_KEY is not configured
+                    error: API key is not configured
         '502':
-          description: Failed to reach TMDB service
+          description: Failed to reach service
           content:
             application/json:
               schema:
@@ -373,16 +363,14 @@ paths:
                 serviceDown:
                   summary: Service Unavailable
                   value:
-                    error: Failed to reach TMDB service
+                    error: Failed to reach service
 
   /v1/tv/details/{id}:
     get:
       tags: [TV Series]
       summary: Get TV series details
       description: |
-        Returns detailed information for a single TV series identified by its TMDB ID.
-
-        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `requireId`, `validateNumericId`
+        Returns detailed information for a single TV series identified by its ID.
       parameters:
         - name: id
           in: path
@@ -390,7 +378,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: TMDB TV series ID (must be a positive integer)
+          description: TV series ID (must be a positive integer)
           example: 1396
       responses:
         '200':
@@ -415,7 +403,7 @@ paths:
                   value:
                     error: 'Parameter "id" must be a positive integer'
         '500':
-          description: TMDB_API_KEY is not configured
+          description: API key is not configured
           content:
             application/json:
               schema:
@@ -424,9 +412,9 @@ paths:
                 missingApiKey:
                   summary: Missing API Key
                   value:
-                    error: TMDB_API_KEY is not configured
+                    error: API key is not configured
         '502':
-          description: Failed to reach TMDB service
+          description: Failed to reach service
           content:
             application/json:
               schema:
@@ -435,17 +423,14 @@ paths:
                 serviceDown:
                   summary: Service Unavailable
                   value:
-                    error: Failed to reach TMDB service
+                    error: Failed to reach service
 
   /v1/tv/popular:
     get:
       tags: [TV Series]
       summary: Get popular TV series
       description: |
-        Returns the current list of popular TV series from TMDB, transformed into
-        simplified `TvSeriesSummary` objects.
-
-        **Middleware:** `requireEnvVar('TMDB_API_KEY')`, `validateNumericLimit`
+        Returns the current list of popular TV series, transformed into simplified `TvSeriesSummary` objects.
       parameters:
         - name: limit
           in: query
@@ -453,6 +438,7 @@ paths:
           schema:
             type: integer
             minimum: 1
+            default: 20
           description: Maximum number of results to return (must be a positive integer). Defaults to 20 if not provided.
           example: 20
       responses:
@@ -495,7 +481,7 @@ paths:
                   value:
                     error: 'Parameter "limit" must be a positive integer'
         '500':
-          description: TMDB_API_KEY is not configured
+          description: API key is not configured
           content:
             application/json:
               schema:
@@ -504,9 +490,9 @@ paths:
                 missingApiKey:
                   summary: Missing API Key
                   value:
-                    error: TMDB_API_KEY is not configured
+                    error: API key is not configured
         '502':
-          description: Failed to reach TMDB service
+          description: Failed to reach service
           content:
             application/json:
               schema:
@@ -515,7 +501,7 @@ paths:
                 serviceDown:
                   summary: Service Unavailable
                   value:
-                    error: Failed to reach TMDB service
+                    error: Failed to reach service
 
 # ── Schemas ───────────────────────────────────────────────────
 
@@ -523,11 +509,11 @@ components:
   schemas:
     MovieSummary:
       type: object
-      description: Simplified movie object transformed from the TMDB API response
+      description: Simplified movie object
       properties:
         id:
           type: integer
-          description: TMDB movie ID
+          description: movie ID
           example: 27205
         title:
           type: string
@@ -550,11 +536,11 @@ components:
 
     TvSeriesSummary:
       type: object
-      description: Simplified TV series object transformed from the TMDB API response
+      description: Simplified TV series object
       properties:
         id:
           type: integer
-          description: TMDB TV series ID
+          description: TV series ID
           example: 1396
         title:
           type: string

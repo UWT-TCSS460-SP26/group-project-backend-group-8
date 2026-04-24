@@ -110,7 +110,7 @@ describe('GET /v1/movie/search', () => {
     mockFetch.mockRejectedValue(new Error('Network error'));
     const response = await request(app).get('/v1/movie/search').query({ title: 'x' });
     expect(response.status).toBe(502);
-    expect(response.body.error).toMatch(/TMDB/);
+    expect(response.body.error).toMatch(/Failed to reach service/);
   });
 });
 
@@ -167,7 +167,7 @@ describe('GET /v1/movie/details', () => {
     mockFetch.mockRejectedValue(new Error('boom'));
     const response = await request(app).get('/v1/movie/details/550');
     expect(response.status).toBe(502);
-    expect(response.body.error).toMatch(/TMDB/);
+    expect(response.body.error).toMatch(/Failed to reach service/);
   });
 });
 
@@ -228,18 +228,18 @@ describe('Missing TMDB_API_KEY', () => {
   it('returns 500 from /v1/movie/search', async () => {
     const response = await request(app).get('/v1/movie/search').query({ title: 'x' });
     expect(response.status).toBe(500);
-    expect(response.body.error).toMatch(/TMDB_API_KEY/);
+    expect(response.body.error).toMatch(/API key is not configured/);
   });
 
   it('returns 500 from /v1/movie/details/:id', async () => {
     const response = await request(app).get('/v1/movie/details/550');
     expect(response.status).toBe(500);
-    expect(response.body.error).toMatch(/TMDB_API_KEY/);
+    expect(response.body.error).toMatch(/API key is not configured/);
   });
 
   it('returns 500 from /v1/movie/popular', async () => {
     const response = await request(app).get('/v1/movie/popular');
     expect(response.status).toBe(500);
-    expect(response.body.error).toMatch(/TMDB_API_KEY/);
+    expect(response.body.error).toMatch(/API key is not configured/);
   });
 });
