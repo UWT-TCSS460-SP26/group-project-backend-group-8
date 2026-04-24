@@ -202,3 +202,111 @@ A: Follow the class demos closely. Movies and TV Shows should have separate test
 
 Q: Do we need versioning? (v1, v2, etc.)  
 A: Routes for endpoints can be on “v1” even though we are not incrementing to v2 in this class. This is good practice and lays the structure for future development.
+
+# Sprint-2 Meeting
+
+4/22/2026
+
+3:50 pm - 5:00 pm
+
+Attending: All
+
+Meeting Manager: Charlene Jarrell
+
+Meeting Scribe: Caleb Ernst
+
+## Agenda Item 1:
+
+Change our meeting schedule to Mondays to get a headstart on the sprint
+
+## Agenda Item 2:
+
+Discussed Checkoff schedule to ensure we can communicate earlier
+
+## Agenda Item 3:
+
+Review Table attributes/ Primary Key
+
+Primary key = Auto Increment Identifier
+
+Entity Reviews
+Primary Key - ReviewID (Serial)
+Attributes:
+Review Enum()
+Body (Text)
+
+Title (VarChar)
+Date_Created (TIMESTAMPZ)
+Date_Updated (TIMESTAMPZ)
+
+Foreign Keys
+UserId
+MovieId
+
+Entity Users:
+Primary Key - ID (BigSerial)
+Attributes:
+Username (Varchar)
+email (Varchar) ???????
+Password (hash)????
+created_at
+
+Entity Ratings:
+Primary Key- ReviewID
+Foreign Key- User ID
+Attributes:
+Media type (enum)
+MediaID (int)
+Score (Numeric)
+
+Entity: (
+order_id INT,
+product_id INT,
+quantity INT,
+PRIMARY KEY (order_id, product_id)
+);
+
+## Agenda Item 4:
+
+Indexes for fast retrival
+
+Essential Indexes for Ratings Tables
+Primary Key (id or (user_id, item_id)): Ensures uniqueness of a user's rating for a specific item.
+Item & User Foreign Key (item_id, user_id): Individual indexes on these columns are necessary for filtering, but compound indexes are usually better.
+Compound Index (item_id, rating): Crucial for high-performance retrieval of average ratings, top-ra
+
+Possibly ask if we dont need?
+easy to do tho so Caleb will handle if we do
+
+## Agenda Item 5:
+
+Implement and put Delete/Update endpoints
+aka make handler and api doc
+
+upsert dem
+return 403 if not authorized to delete review
+
+## Agenda Item 6:
+
+Update prisma schema file
+
+User Story Delegation:
+Setup and Prisma: Caleb
+PSQL DB creation -Caleb
+
+As a user, I want to submit a rating for a movie or show so that my opinion contributes to the community's picture of the content
+
+As a user, I want to update and delete my own ratings and reviews so that I can correct mistakes or change my mind
+-Christina ^
+
+As an admin, I want to delete inappropriate reviews so that the platform stays usable.
+
+As a visitor, I want to see ratings and reviews for a movie or show so that I can decide whether to watch it.
+
+-Mansur ^
+
+As a user, I want to write a review for a movie or show so that I can share more than just a score.
+
+As a frontend developer, I want OpenAPI documentation and automated tests for every new endpoint so that I can integrate without reading source code and trust the API behaves as documented.
+
+-Charlene
