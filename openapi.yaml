@@ -3,7 +3,7 @@ info:
   title: TCSS 460 Group 8 API
   description: |
     **Team:** Group 8
-    
+
     **Deployed URL:** https://tcss460-team-8-api.onrender.com/
 
     Welcome to version 1 of The Movie & Show Reviews Database API--a RESTful API for the TCSS 460 Group 8 project. This is where you will find the list of currently available methods for our movie and tv reviews API.
