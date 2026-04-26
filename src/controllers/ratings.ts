@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
-import { $Enums, Prisma } from '@/generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { GetRatingsQuery } from '@/middleware/validation';
-import Role = $Enums.Role;
 
 /**
  * Public — aggregate rating summary for a TMDB title.
@@ -35,7 +34,12 @@ export const getRatingsSummary = async (_request: Request, response: Response) =
 
 export const postRating = async (request: Request, response: Response) => {
   const { mediaId, mediaType, score } = request.body;
-  const userId = Number(request.user!.sub);
+  const userId = Number(request.user?.sub);
+
+  if (!userId) {
+    return response.status(400).json({ error: 'User not found' });
+  }
+
   try {
     const rating = await prisma.rating.create({
       data: {
@@ -60,17 +64,13 @@ export const postRating = async (request: Request, response: Response) => {
 export const updateRating = async (request: Request, response: Response) => {
   const id = Number(request.params.id);
   const { score } = request.body;
-  const { sub, role } = request.user!;
+  const { sub } = request.user!;
   const userId = Number(sub);
 
   try {
     const rating = await prisma.rating.findUnique({ where: { id }, select: { userId: true } });
 
-    if (!rating) {
-      return response.status(404).json({ error: 'Rating not found' });
-    }
-
-    if (role !== Role.ADMIN && rating.userId !== userId) {
+    if (rating!.userId !== userId) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
@@ -80,14 +80,20 @@ export const updateRating = async (request: Request, response: Response) => {
     });
 
     response.status(200).json({ data: updatedRating });
-  } catch (_error) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        response.status(400).json({ error: 'Rating not found' });
+        return;
+      }
+    }
     response.status(500).json({ error: 'Failed to update rating' });
   }
 };
 
 export const deleteRating = async (request: Request, response: Response) => {
   const id = Number(request.params.id);
-  const { sub, role } = request.user!;
+  const { sub } = request.user!;
   const userId = Number(sub);
 
   try {
@@ -96,20 +102,20 @@ export const deleteRating = async (request: Request, response: Response) => {
       select: { userId: true },
     });
 
-    if (!rating) {
-      return response.status(404).json({ error: 'Rating not found' });
-    }
-
-    if (role !== Role.ADMIN && rating.userId !== userId) {
+    if (rating!.userId !== userId) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
-    const deletedRating = await prisma.rating.delete({
-      where: { id },
-    });
+    await prisma.rating.delete({ where: { id } });
 
-    response.status(200).json({ data: deletedRating });
-  } catch (_error) {
+    response.status(200).json({ message: 'Successfully deleted' });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        response.status(400).json({ error: 'Rating not found' });
+        return;
+      }
+    }
     response.status(500).json({ error: 'Failed to delete rating' });
   }
 };
