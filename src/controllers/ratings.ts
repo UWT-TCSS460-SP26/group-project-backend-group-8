@@ -16,7 +16,7 @@ export const postRating = async (request: Request, response: Response) => {
       },
     });
     response.status(201).json({ data: rating });
-  } catch (error: unknown) {
+  } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2003') {
         response.status(400).json({ error: 'User not found' });
