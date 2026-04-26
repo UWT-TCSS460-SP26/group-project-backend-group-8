@@ -15,9 +15,11 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@/generated/prisma": ["prisma/src/generated/prisma"],
+      "@/generated/prisma/client": ["prisma/src/generated/prisma/client"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "prisma/src/generated/prisma/client"],
   "exclude": ["node_modules", "dist", "tests"]
 }
