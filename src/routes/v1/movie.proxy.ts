@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { searchMovie, getMovieDetails, getPopularMovies } from '../../controllers/movie.proxy';
+import { searchMovie, getMovieDetails, getPopularMovies } from '@/controllers/movie.proxy';
 import {
   requireTitle,
   validateNumericId,
   validateNumericLimit,
   requireEnvVar,
-} from '../../middleware/validation';
+} from '@/middleware/validation';
 
 const movieRouter = Router();
 

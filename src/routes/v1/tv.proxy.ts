@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { searchTvSeries, getTvSeriesDetails, getPopularTvSeries } from '../../controllers/tv.proxy';
+import { searchTvSeries, getTvSeriesDetails, getPopularTvSeries } from '@/controllers/tv.proxy';
 import {
   requireTitle,
   validateNumericId,
   validateNumericLimit,
   requireEnvVar,
-} from '../../middleware/validation';
+} from '@/middleware/validation';
 
 const tvSeriesRouter = Router();
 
