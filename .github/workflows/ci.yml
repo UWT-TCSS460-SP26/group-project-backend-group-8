@@ -23,11 +23,11 @@ jobs:
       - name: Format Check
         run: npm run format:check
 
-      - name: Lint
-        run: npm run lint
-
       - name: Generate Prisma Client
         run: npm run prisma:generate
+
+      - name: Lint
+        run: npm run lint
 
       - name: Build
         run: npm run build
