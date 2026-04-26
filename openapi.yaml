@@ -21,6 +21,10 @@ tags:
     description: Movie proxy routes — search, details, and popular listings
   - name: TV Series
     description: TV series proxy routes — search, details, and popular listings
+  - name: Reviews
+    description: User-submitted reviews persisted via Prisma/Postgres
+  - name: Ratings
+    description: User-submitted scores and aggregate summaries
 
 paths:
   # ── General ───────────────────────────────────────────────────
@@ -503,6 +507,73 @@ paths:
                   value:
                     error: Failed to reach service
 
+  # ── Reviews ──────────────────────────────────────────────────
+
+  /v1/reviews:
+    get:
+      tags: [Reviews]
+      summary: List reviews for a movie or TV title
+      description: |
+        Public, paginated list of reviews for a given media id and type.
+        Returns `200` with an empty `data` array when no reviews exist
+        (does not 404 — an unreviewed title is not an error).
+      parameters:
+        - { in: query, name: mediaId, required: true, schema: { type: integer, minimum: 1 }, example: 550 }
+        - { in: query, name: mediaType, required: true, schema: { type: string, enum: [movie, tv] } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+        - { in: query, name: sort, schema: { type: string, enum: [createdAt, id], default: createdAt } }
+        - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
+      responses:
+        '200':
+          description: Paginated list of reviews
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedReviews' }
+        '400':
+          description: Validation failed (missing/invalid query params)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ── Ratings ──────────────────────────────────────────────────
+
+  /v1/ratings:
+    get:
+      tags: [Ratings]
+      summary: Aggregate rating summary for a movie or TV title
+      description: |
+        Public. Returns the average score and total rating count for a given
+        media id and type. `average` is `null` when no ratings exist (rather
+        than `0`, which would be misleading on a 1..10 scale).
+      parameters:
+        - { in: query, name: mediaId, required: true, schema: { type: integer, minimum: 1 }, example: 550 }
+        - { in: query, name: mediaType, required: true, schema: { type: string, enum: [movie, tv] } }
+      responses:
+        '200':
+          description: Aggregate rating summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/RatingSummary' }
+        '400':
+          description: Validation failed (missing/invalid query params)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
 # ── Schemas ───────────────────────────────────────────────────
 
 components:
@@ -568,3 +639,51 @@ components:
           type: string
           description: Human-readable error message
           example: 'An unexpected error occurred'
+
+    Review:
+      type: object
+      description: A user-submitted review of a movie or TV series
+      properties:
+        id: { type: integer, example: 1 }
+        userId: { type: integer, nullable: true, example: 42 }
+        mediaId: { type: integer, example: 550 }
+        mediaType: { type: string, enum: [movie, tv], example: movie }
+        title: { type: string, nullable: true, example: 'Loved it' }
+        body: { type: string, example: 'A modern classic' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        user:
+          type: object
+          nullable: true
+          description: Author info; null if the original user was deleted (onDelete SetNull)
+          properties:
+            id: { type: integer, example: 42 }
+            username: { type: string, example: alice }
+
+    PaginatedReviews:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Review' }
+        pagination:
+          type: object
+          properties:
+            page: { type: integer, example: 1 }
+            limit: { type: integer, example: 25 }
+            total: { type: integer, example: 53 }
+            totalPages: { type: integer, example: 3 }
+
+    RatingSummary:
+      type: object
+      description: Aggregate rating data for a single title
+      properties:
+        mediaId: { type: integer, example: 550 }
+        mediaType: { type: string, enum: [movie, tv], example: movie }
+        average:
+          type: number
+          format: float
+          nullable: true
+          description: Average score (1.0–10.0); null when no ratings exist
+          example: 7.5
+        count: { type: integer, example: 4 }
