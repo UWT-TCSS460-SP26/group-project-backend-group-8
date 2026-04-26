@@ -9,14 +9,15 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "tsx watch --env-file=.env src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint .",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write",
+    "format:check": "prettier --check",
     "lint:fix": "eslint --fix .",
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:generate": "npx prisma generate",
