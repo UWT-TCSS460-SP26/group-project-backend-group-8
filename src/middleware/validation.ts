@@ -15,8 +15,24 @@ export const UpdateReviewSchema = z.object({
   body: z.string().min(1),
 });
 
+// Public-GET query schemas. z.coerce parses Express's stringly-typed req.query.
+const MediaQuery = {
+  mediaId: z.coerce.number().int().positive(),
+  mediaType: z.enum(['movie', 'tv']),
+};
+
+export const GetReviewsQuerySchema = z.object({
+  ...MediaQuery,
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(25),
+  sort: z.enum(['createdAt', 'id']).default('createdAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
+});
+
+export const GetRatingsQuerySchema = z.object({ ...MediaQuery });
+
 const validate =
-  (source: 'body' | 'params', schema: z.ZodType): RequestHandler =>
+  (source: 'body' | 'params' | 'query', schema: z.ZodType): RequestHandler =>
   (request, response, next) => {
     const result = schema.safeParse(request[source]);
     if (!result.success) {
@@ -29,17 +45,27 @@ const validate =
       });
       return;
     }
-    request[source] = result.data;
+    if (source === 'query') {
+      // Express 5 made req.query a read-only getter — assignment silently
+      // fails. Hand the parsed value to the controller via res.locals.
+      response.locals.query = result.data;
+    } else {
+      (request as unknown as Record<string, unknown>)[source] = result.data;
+    }
     next();
   };
 
 export const validateRatingBody = validate('body', PostRatingSchema);
 export const validateUpdateRatingBody = validate('body', UpdateRatingSchema);
 export const validateUpdateReviewBody = validate('body', UpdateReviewSchema);
+export const validateGetReviewsQuery = validate('query', GetReviewsQuerySchema);
+export const validateGetRatingsQuery = validate('query', GetRatingsQuerySchema);
 
 export type RatingBody = z.infer<typeof PostRatingSchema>;
 export type UpdateRatingBody = z.infer<typeof UpdateRatingSchema>;
 export type UpdateReviewBody = z.infer<typeof UpdateReviewSchema>;
+export type GetReviewsQuery = z.infer<typeof GetReviewsQuerySchema>;
+export type GetRatingsQuery = z.infer<typeof GetRatingsQuerySchema>;
 
 /**
  * Validates that a required environment variable is set.
