@@ -6,7 +6,7 @@ import {
   validateUpdateReviewBody,
 } from '@/middleware/validation';
 import { requireAuth, requireRole } from '@/middleware/requireAuth';
-import { Role } from '@prisma/client';
+import { Role } from '@/generated/prisma';
 
 const reviewsRouter = Router();
 

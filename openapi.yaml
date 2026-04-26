@@ -518,11 +518,30 @@ paths:
         Returns `200` with an empty `data` array when no reviews exist
         (does not 404 — an unreviewed title is not an error).
       parameters:
-        - { in: query, name: mediaId, required: true, schema: { type: integer, minimum: 1 }, example: 550 }
-        - { in: query, name: mediaType, required: true, schema: { type: string, enum: [movie, tv] } }
+        - {
+            in: query,
+            name: mediaId,
+            required: true,
+            schema: { type: integer, minimum: 1 },
+            example: 550,
+          }
+        - {
+            in: query,
+            name: mediaType,
+            required: true,
+            schema: { type: string, enum: [movie, tv] },
+          }
         - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
-        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
-        - { in: query, name: sort, schema: { type: string, enum: [createdAt, id], default: createdAt } }
+        - {
+            in: query,
+            name: limit,
+            schema: { type: integer, minimum: 1, maximum: 100, default: 25 },
+          }
+        - {
+            in: query,
+            name: sort,
+            schema: { type: string, enum: [createdAt, id], default: createdAt },
+          }
         - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
       responses:
         '200':
@@ -552,8 +571,19 @@ paths:
         media id and type. `average` is `null` when no ratings exist (rather
         than `0`, which would be misleading on a 1..10 scale).
       parameters:
-        - { in: query, name: mediaId, required: true, schema: { type: integer, minimum: 1 }, example: 550 }
-        - { in: query, name: mediaType, required: true, schema: { type: string, enum: [movie, tv] } }
+        - {
+            in: query,
+            name: mediaId,
+            required: true,
+            schema: { type: integer, minimum: 1 },
+            example: 550,
+          }
+        - {
+            in: query,
+            name: mediaType,
+            required: true,
+            schema: { type: string, enum: [movie, tv] },
+          }
       responses:
         '200':
           description: Aggregate rating summary
