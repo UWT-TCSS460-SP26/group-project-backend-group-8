@@ -20,6 +20,12 @@ jobs:
 
       - run: npm ci
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Format
+        run: npm run format
+
       - name: Format Check
         run: npm run format:check
 
