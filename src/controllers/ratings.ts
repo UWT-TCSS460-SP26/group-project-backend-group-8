@@ -1,7 +1,37 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
 import { $Enums, Prisma } from '@/generated/prisma/client';
+import { GetRatingsQuery } from '@/middleware/validation';
 import Role = $Enums.Role;
+
+/**
+ * Public — aggregate rating summary for a TMDB title.
+ * No auth required. `average` is null when no ratings exist (rather than 0,
+ * which would be misleading for a 1..10 scale).
+ */
+export const getRatingsSummary = async (_request: Request, response: Response) => {
+  const { mediaId, mediaType } = response.locals.query as GetRatingsQuery;
+  const where = { mediaId, mediaType };
+
+  try {
+    const aggregate = await prisma.rating.aggregate({
+      where,
+      _avg: { score: true },
+      _count: { _all: true },
+    });
+
+    response.status(200).json({
+      data: {
+        mediaId,
+        mediaType,
+        average: aggregate._avg.score,
+        count: aggregate._count._all,
+      },
+    });
+  } catch (_error) {
+    response.status(500).json({ error: 'Failed to retrieve rating summary' });
+  }
+};
 
 export const postRating = async (request: Request, response: Response) => {
   const { mediaId, mediaType, score } = request.body;

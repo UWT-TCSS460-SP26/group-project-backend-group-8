@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { postRating, updateRating, deleteRating } from '@/controllers/ratings';
+import { getRatingsSummary, postRating, updateRating, deleteRating } from '@/controllers/ratings';
 import {
+  validateGetRatingsQuery,
   validateNumericId,
   validateRatingBody,
   validateUpdateRatingBody,
@@ -9,6 +10,7 @@ import { requireAuth } from '@/middleware/requireAuth';
 
 const ratingsRouter = Router();
 
+ratingsRouter.get('/', validateGetRatingsQuery, getRatingsSummary);
 ratingsRouter.post('/', requireAuth, validateRatingBody, postRating);
 ratingsRouter.put('/:id', requireAuth, validateNumericId, validateUpdateRatingBody, updateRating);
 ratingsRouter.delete('/:id', requireAuth, validateNumericId, deleteRating);
