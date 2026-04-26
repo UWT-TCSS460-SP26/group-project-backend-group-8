@@ -40,7 +40,7 @@ describe('GET /v1/ratings', () => {
         where: { mediaId: 550, mediaType: 'movie' },
         _avg: { score: true },
         _count: { _all: true },
-      }),
+      })
     );
   });
 
@@ -74,7 +74,7 @@ describe('GET /v1/ratings', () => {
     expect(response.status).toBe(200);
     expect(response.body.data.mediaType).toBe('tv');
     expect(mockedPrisma.rating.aggregate).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { mediaId: 1399, mediaType: 'tv' } }),
+      expect.objectContaining({ where: { mediaId: 1399, mediaType: 'tv' } })
     );
   });
 

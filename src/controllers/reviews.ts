@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
-import { $Enums } from '@/generated/prisma/client';
+import { $Enums, Prisma } from '@/generated/prisma/client';
 import { GetReviewsQuery } from '@/middleware/validation';
 import Role = $Enums.Role;
 
@@ -10,8 +10,7 @@ import Role = $Enums.Role;
  * reviews exist for the title.
  */
 export const getReviews = async (_request: Request, response: Response) => {
-  const { mediaId, mediaType, page, limit, sort, order } = response.locals
-    .query as GetReviewsQuery;
+  const { mediaId, mediaType, page, limit, sort, order } = response.locals.query as GetReviewsQuery;
   const where = { mediaId, mediaType };
 
   try {
@@ -43,7 +42,7 @@ export const getReviews = async (_request: Request, response: Response) => {
 export const updateReview = async (request: Request, response: Response) => {
   const id = Number(request.params.id);
   const { body } = request.body;
-  const { sub, role } = request.user!;
+  const { sub } = request.user!;
   const userId = Number(sub);
 
   try {
@@ -52,11 +51,7 @@ export const updateReview = async (request: Request, response: Response) => {
       select: { userId: true },
     });
 
-    if (!review) {
-      return response.status(404).json({ error: 'Review not found' });
-    }
-
-    if (role !== Role.ADMIN && review.userId !== userId) {
+    if (review!.userId !== userId) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
@@ -66,7 +61,13 @@ export const updateReview = async (request: Request, response: Response) => {
     });
 
     response.status(200).json({ data: updatedReview });
-  } catch (_error) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        response.status(400).json({ error: 'Rating not found' });
+        return;
+      }
+    }
     response.status(500).json({ error: 'Failed to update review' });
   }
 };
@@ -82,20 +83,20 @@ export const deleteReview = async (request: Request, response: Response) => {
       select: { userId: true },
     });
 
-    if (!review) {
-      return response.status(404).json({ error: 'Review not found' });
-    }
-
-    if (role !== Role.ADMIN && review.userId !== userId) {
+    if (role === Role.USER && review!.userId !== userId) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
-    const deletedReview = await prisma.review.delete({
-      where: { id },
-    });
+    await prisma.review.delete({ where: { id } });
 
-    response.status(200).json({ data: deletedReview });
-  } catch (_error) {
+    response.status(200).json({ message: 'Successfully deleted' });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        response.status(400).json({ error: 'Review not found' });
+        return;
+      }
+    }
     response.status(500).json({ error: 'Failed to delete review' });
   }
 };

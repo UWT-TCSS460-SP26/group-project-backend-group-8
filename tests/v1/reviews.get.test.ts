@@ -51,7 +51,7 @@ describe('GET /v1/reviews', () => {
         skip: 0,
         take: 25,
         orderBy: { createdAt: 'desc' },
-      }),
+      })
     );
   });
 
@@ -72,7 +72,7 @@ describe('GET /v1/reviews', () => {
     expect(response.status).toBe(200);
     expect(response.body.pagination).toEqual({ page: 2, limit: 10, total: 53, totalPages: 6 });
     expect(mockedPrisma.review.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skip: 10, take: 10, orderBy: { id: 'asc' } }),
+      expect.objectContaining({ skip: 10, take: 10, orderBy: { id: 'asc' } })
     );
   });
 
@@ -139,7 +139,7 @@ describe('GET /v1/reviews', () => {
 
     await request(app).get('/v1/reviews').query({ mediaId: '1399', mediaType: 'tv' });
     expect(mockedPrisma.review.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { mediaId: 1399, mediaType: 'tv' } }),
+      expect.objectContaining({ where: { mediaId: 1399, mediaType: 'tv' } })
     );
   });
 
