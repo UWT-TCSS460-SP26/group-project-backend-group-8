@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../lib/prisma';
+import { prisma } from '@/prisma';
 
 const router = Router();
 
@@ -65,7 +65,7 @@ router.post('/dev-login', async (request: Request, response: Response): Promise<
 
   const token = jwt.sign(
     {
-      sub: String(user.id),
+      sub: user.id,
       email: user.email,
       role: user.role,
     },

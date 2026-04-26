@@ -1,4 +1,45 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
+import { z } from 'zod';
+
+export const PostRatingSchema = z.object({
+  mediaId: z.number().int().positive(),
+  mediaType: z.enum(['movie', 'tv']),
+  score: z.number().min(1).max(10),
+});
+
+export const UpdateRatingSchema = z.object({
+  score: z.number().min(1).max(10),
+});
+
+export const UpdateReviewSchema = z.object({
+  body: z.string().min(1),
+});
+
+const validate =
+  (source: 'body' | 'params', schema: z.ZodType): RequestHandler =>
+  (request, response, next) => {
+    const result = schema.safeParse(request[source]);
+    if (!result.success) {
+      response.status(400).json({
+        error: 'Validation failed',
+        details: result.error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+      });
+      return;
+    }
+    request[source] = result.data;
+    next();
+  };
+
+export const validateRatingBody = validate('body', PostRatingSchema);
+export const validateUpdateRatingBody = validate('body', UpdateRatingSchema);
+export const validateUpdateReviewBody = validate('body', UpdateReviewSchema);
+
+export type RatingBody = z.infer<typeof PostRatingSchema>;
+export type UpdateRatingBody = z.infer<typeof UpdateRatingSchema>;
+export type UpdateReviewBody = z.infer<typeof UpdateReviewSchema>;
 
 /**
  * Validates that a required environment variable is set.
@@ -21,18 +62,6 @@ export const requireTitle = (request: Request, response: Response, next: NextFun
   const title = request.query.title;
   if (!title) {
     response.status(400).json({ error: 'Parameter "title" is required (query param)' });
-    return;
-  }
-  next();
-};
-
-/**
- * Validates that the 'id' route param is present.
- */
-export const requireId = (request: Request, response: Response, next: NextFunction) => {
-  const id = request.params.id;
-  if (!id) {
-    response.status(400).json({ error: 'Parameter "id" is required (route param)' });
     return;
   }
   next();

@@ -37,7 +37,7 @@ export const requireAuth = (request: Request, response: Response, next: NextFunc
   const token = header.slice('Bearer '.length).trim();
 
   try {
-    request.user = jwt.verify(token, secret) as AuthenticatedUser;
+    request.user = jwt.verify(token, secret) as unknown as AuthenticatedUser;
     next();
   } catch {
     response.status(401).json({ error: 'Invalid or expired token' });
@@ -47,7 +47,7 @@ export const requireAuth = (request: Request, response: Response, next: NextFunc
 /**
  * Role gate. Use after requireAuth:
  *
- *   router.delete('/reviews/:id', requireAuth, requireRole('admin'), handler);
+ * router.delete('/reviews/:id', requireAuth, requireRole('admin'), handler);
  */
 export const requireRole = (role: string) => {
   return (request: Request, response: Response, next: NextFunction): void => {
