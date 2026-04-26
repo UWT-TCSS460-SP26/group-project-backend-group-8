@@ -80,7 +80,7 @@ export default [
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', 'jest.config.js', 'modules/', 'src/generated/prisma/'],
+    ignores: ['dist/', 'node_modules/', 'coverage/', 'jest.config.js', 'modules/', 'prisma/src/generated/'],
   },
   prettierConfig,
 ];
