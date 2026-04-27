@@ -1,3 +1,4 @@
+/** @type {import('jest').Config} */
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
@@ -9,7 +10,7 @@ module.exports = {
   },
   setupFiles: ['<rootDir>/tests/setup.ts'],
   moduleNameMapper: {
-    '^@/(.*)\$': '<rootDir>/src/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
     '^@scalar/express-api-reference$': '<rootDir>/tests/__mocks__/scalarMock.cjs',
   },
 };
