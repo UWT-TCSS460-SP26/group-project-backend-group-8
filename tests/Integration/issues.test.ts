@@ -17,9 +17,7 @@ describe('POST /issues', () => {
   });
 
   it('400 — rejects report with only whitespace', async () => {
-    const res = await request(app)
-      .post('/issues')
-      .send({ title: '   ', description: '' });
+    const res = await request(app).post('/issues').send({ title: '   ', description: '' });
     expect(res.status).toBe(400);
   });
 });
