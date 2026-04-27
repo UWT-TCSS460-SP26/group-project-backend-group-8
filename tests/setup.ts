@@ -1,3 +1,5 @@
+process.env.JWT_SECRET = 'test-secret-do-not-use-in-production';
+
 import 'dotenv/config';
 import http from 'http';
 
