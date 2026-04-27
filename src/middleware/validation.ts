@@ -11,6 +11,13 @@ export const UpdateRatingSchema = z.object({
   score: z.number().min(1).max(10),
 });
 
+export const PostReviewSchema = z.object({
+  mediaId: z.number().int().positive(),
+  mediaType: z.enum(['movie', 'tv']),
+  title: z.string().min(1).optional(),
+  body: z.string().min(1),
+});
+
 export const UpdateReviewSchema = z.object({
   body: z.string().min(1),
 });
@@ -57,12 +64,14 @@ const validate =
 
 export const validateRatingBody = validate('body', PostRatingSchema);
 export const validateUpdateRatingBody = validate('body', UpdateRatingSchema);
+export const validatePostReviewBody = validate('body', PostReviewSchema);
 export const validateUpdateReviewBody = validate('body', UpdateReviewSchema);
 export const validateGetReviewsQuery = validate('query', GetReviewsQuerySchema);
 export const validateGetRatingsQuery = validate('query', GetRatingsQuerySchema);
 
 export type RatingBody = z.infer<typeof PostRatingSchema>;
 export type UpdateRatingBody = z.infer<typeof UpdateRatingSchema>;
+export type PostReviewBody = z.infer<typeof PostReviewSchema>;
 export type UpdateReviewBody = z.infer<typeof UpdateReviewSchema>;
 export type GetReviewsQuery = z.infer<typeof GetReviewsQuerySchema>;
 export type GetRatingsQuery = z.infer<typeof GetRatingsQuerySchema>;

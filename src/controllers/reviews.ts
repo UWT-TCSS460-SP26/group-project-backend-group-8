@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
 import { $Enums, Prisma } from '@/generated/prisma/client';
-import { GetReviewsQuery } from '@/middleware/validation';
+import { PostReviewBody, GetReviewsQuery } from '@/middleware/validation';
 import Role = $Enums.Role;
 
 /**
@@ -36,6 +36,39 @@ export const getReviews = async (_request: Request, response: Response) => {
     });
   } catch (_error) {
     response.status(500).json({ error: 'Failed to retrieve reviews' });
+  }
+};
+
+/**
+ * POST /v1/reviews
+ * Auth required. Creates a review for a movie or TV show.
+ * A user may post multiple reviews for the same title (no unique constraint on reviews).
+ */
+export const createReview = async (request: Request, response: Response) => {
+  const { mediaId, mediaType, title, body } = request.body as PostReviewBody;
+  const { sub } = request.user!;
+  const userId = Number(sub);
+
+  try {
+    const review = await prisma.review.create({
+      data: {
+        userId,
+        mediaId,
+        mediaType,
+        title,
+        body,
+      },
+    });
+
+    response.status(201).json({ data: review });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2003') {
+        response.status(404).json({ error: 'User not found' });
+        return;
+      }
+    }
+    response.status(500).json({ error: 'Failed to create review' });
   }
 };
 
