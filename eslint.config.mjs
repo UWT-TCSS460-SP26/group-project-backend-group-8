@@ -86,7 +86,7 @@ export default [
       'coverage/',
       'jest.config.js',
       'modules/',
-      'prisma/src/generated/',
+      'src/generated/',
     ],
   },
   prettierConfig,
