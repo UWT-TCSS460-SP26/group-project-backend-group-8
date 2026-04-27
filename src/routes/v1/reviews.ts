@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { getReviews, createReview, updateReview, deleteReview } from '@/controllers/reviews';
+import {
+  getReviews,
+  getReviewById,
+  createReview,
+  updateReview,
+  deleteReview,
+} from '@/controllers/reviews';
 import {
   validateGetReviewsQuery,
   validatePostReviewBody,
@@ -12,6 +18,7 @@ import { Role } from '@/generated/prisma';
 const reviewsRouter = Router();
 
 reviewsRouter.get('/', validateGetReviewsQuery, getReviews);
+reviewsRouter.get('/:id', validateNumericId, getReviewById);
 reviewsRouter.post('/', requireAuth, validatePostReviewBody, createReview);
 reviewsRouter.put('/:id', requireAuth, validateUpdateReviewBody, updateReview);
 reviewsRouter.delete('/:id', requireAuth, requireRole(Role.ADMIN), validateNumericId, deleteReview);
