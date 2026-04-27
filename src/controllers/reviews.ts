@@ -114,7 +114,11 @@ export const updateReview = async (request: Request, response: Response) => {
       select: { userId: true },
     });
 
-    if (review!.userId !== userId) {
+    if (!review) {
+      return response.status(404).json({ error: 'Review not found' });
+    }
+
+    if (review.userId !== userId) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
@@ -146,7 +150,14 @@ export const deleteReview = async (request: Request, response: Response) => {
       select: { userId: true },
     });
 
-    if (role === Role.USER && review!.userId !== userId) {
+    if (!review) {
+      return response.status(404).json({ error: 'Review not found' });
+    }
+
+    const isAdmin = role === Role.ADMIN;
+    const isOwner = review.userId === userId;
+
+    if (!isAdmin && !isOwner) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 

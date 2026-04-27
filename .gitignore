@@ -23,4 +23,5 @@ yarn-error.log
 # Coverage
 coverage/
 
-/src/generated/prisma
+# Prisma generated client
+src/generated/

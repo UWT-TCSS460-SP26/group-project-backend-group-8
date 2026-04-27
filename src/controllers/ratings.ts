@@ -91,7 +91,11 @@ export const updateRating = async (request: Request, response: Response) => {
   try {
     const rating = await prisma.rating.findUnique({ where: { id }, select: { userId: true } });
 
-    if (rating!.userId !== userId) {
+    if (!rating) {
+      return response.status(404).json({ error: 'Rating not found' });
+    }
+
+    if (rating.userId !== userId) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
@@ -123,7 +127,11 @@ export const deleteRating = async (request: Request, response: Response) => {
       select: { userId: true },
     });
 
-    if (rating!.userId !== userId) {
+    if (!rating) {
+      return response.status(404).json({ error: 'Rating not found' });
+    }
+
+    if (rating.userId !== userId) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
