@@ -1,9 +1,18 @@
+jest.mock('@/prisma', () => ({
+  prisma: {
+    user: {
+      upsert: jest.fn().mockResolvedValue({
+        id: 1,
+        username: 'testuser',
+        email: 'testuser@dev.local',
+        role: 'USER',
+      }),
+    },
+  },
+}));
+
 import request from 'supertest';
 import { app } from '../src/app';
-
-beforeAll(() => {
-  process.env.JWT_SECRET = 'test-secret';
-});
 
 describe('POST /auth/dev-login', () => {
   // Happy path
