@@ -1,30 +1,132 @@
 openapi: 3.0.3
 info:
-  title: TCSS 460 Group Project API
+  title: TCSS 460 Group 8 API
   description: |
-    **Team:** [Your Team Name]
-    **Deployed URL:** [Your deployed URL]
+    **Team:** Group 8
 
-    A RESTful API for the TCSS 460 group project.
+    **Deployed URL:** https://tcss460-team-8-api.onrender.com/
+
+    Welcome to version 1 of The Movie & Show Reviews Database API--a RESTful API for the TCSS 460 Group 8 project. This is where you will find the list of currently available methods for our movie and tv reviews API.
+
   version: 0.1.0
 
 servers:
-  - url: http://localhost:3000
-    description: Local development
+  - url: https://tcss460-team-8-api.onrender.com/
+    description: Express API server hosted on Render
 
 tags:
   - name: General
     description: General-purpose routes
+  - name: Movies
+    description: Movie proxy routes — search, details, and popular listings
+  - name: TV Series
+    description: TV series proxy routes — search, details, and popular listings
+  - name: Reviews
+    description: User-submitted reviews persisted via Prisma/Postgres
+  - name: Ratings
+    description: User-submitted scores and aggregate summaries
 
 paths:
-  /hello:
+  # ── General ───────────────────────────────────────────────────
+
+  /health:
     get:
       tags: [General]
-      summary: Hello
-      description: Returns a greeting message.
+      summary: Health check
+      description: Heartbeat route that returns a fixed response confirming the API is alive.
       responses:
         '200':
-          description: A greeting message
+          description: API is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: alive
+
+  # ── Auth ─────────────────────────────────────────────────────
+
+  /auth/dev-login:
+    post:
+      tags: [General]
+      summary: Dev login (temporary)
+      description: |
+        **Sprint 2 only — do not deploy to production.**
+        Accepts a username, find-or-creates a regular user row, and returns
+        a signed JWT. Does not validate a password. Admin accounts must be
+        seeded separately.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  example: alice
+                email:
+                  type: string
+                  format: email
+                  example: alice@example.test
+      responses:
+        '200':
+          description: JWT token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Missing username
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: username is required
+        '500':
+          description: JWT_SECRET not configured
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: JWT_SECRET is not configured
+
+  # ── Movies ────────────────────────────────────────────────────
+
+  /v1/movie/search:
+    get:
+      tags: [Movies]
+      summary: Search movies by title
+      description: |
+        Searches for movies matching the given title. Results are transformed
+        into a simplified `MovieSummary` shape.
+      parameters:
+        - name: title
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Movie title to search for
+          example: Inception
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+          description: Maximum number of results to return (must be a positive integer). Defaults to 20 or the actual number of results, whichever is smaller.
+          example: 2
+      responses:
+        '200':
+          description: List of matching movies
           content:
             application/json:
               schema:
@@ -32,4 +134,1071 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 'Hello, TCSS 460!'
+                    example: 'Displaying 2 out of 12 available results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieSummary'
+              example:
+                message: 'Displaying 2 out of 12 available results'
+                results:
+                  - id: 27205
+                    title: 'Inception'
+                    synopsis: 'A thief who steals corporate secrets through dream-sharing technology.'
+                    releaseDate: '2010-07-16'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
+                  - id: 613096
+                    title: 'The Inception of Something'
+                    synopsis: 'A short documentary about inception.'
+                    releaseDate: '2019-10-10'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/something.jpg'
+        '400':
+          description: Missing or invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingTitle:
+                  summary: Missing title
+                  value:
+                    error: 'Parameter "title" is required (query param)'
+                invalidLimit:
+                  summary: Invalid limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
+        '500':
+          description: API key is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: API key is not configured
+        '502':
+          description: Failed to reach service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach service
+
+  /v1/movie/details/{id}:
+    get:
+      tags: [Movies]
+      summary: Get movie details
+      description: |
+        Returns detailed information for a single movie identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Movie ID (must be a positive integer)
+          example: 27205
+      responses:
+        '200':
+          description: Movie details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSummary'
+        '400':
+          description: Missing or invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingId:
+                  summary: Missing ID
+                  value:
+                    error: 'Parameter "id" is required'
+                invalidId:
+                  summary: Non-numeric ID
+                  value:
+                    error: 'Parameter "id" must be a positive integer'
+        '500':
+          description: API key is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: API key is not configured
+        '502':
+          description: Failed to reach service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach service
+
+  /v1/movie/popular:
+    get:
+      tags: [Movies]
+      summary: Get popular movies
+      description: |
+        Returns the current list of popular movies, transformed into
+        simplified `MovieSummary` objects.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+          description: Maximum number of results to return (must be a positive integer). Defaults to 20 if not provided.
+          example: 2
+      responses:
+        '200':
+          description: List of popular movies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 2 out of 10000 available results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovieSummary'
+              example:
+                message: 'Displaying 2 out of 10000 available results'
+                results:
+                  - id: 27205
+                    title: 'Inception'
+                    synopsis: 'A thief who steals corporate secrets through dream-sharing technology.'
+                    releaseDate: '2010-07-16'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
+                  - id: 157336
+                    title: 'Interstellar'
+                    synopsis: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival."
+                    releaseDate: '2014-11-05'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/gEU2QniE6E77NI6lCU6MvrIdY08.jpg'
+        '400':
+          description: Invalid limit parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidLimit:
+                  summary: Invalid Limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
+        '500':
+          description: API key is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: API key is not configured
+        '502':
+          description: Failed to reach service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach service
+
+  # ── TV Series ─────────────────────────────────────────────────
+
+  /v1/tv/search:
+    get:
+      tags: [TV Series]
+      summary: Search TV series by title
+      description: |
+        Searches for TV series matching the given title. Results are transformed
+        into a simplified `TvSeriesSummary` shape.
+      parameters:
+        - name: title
+          in: query
+          required: true
+          schema:
+            type: string
+          description: TV series title to search for
+          example: Breaking Bad
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+          description: Maximum number of results to return (must be a positive integer). Defaults to 20 or the actual number of results, whichever is smaller.
+          example: 2
+      responses:
+        '200':
+          description: List of matching TV series
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 2 out of 5 available results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvSeriesSummary'
+              example:
+                message: 'Displaying 2 out of 5 available results'
+                results:
+                  - id: 1396
+                    title: 'Breaking Bad'
+                    synopsis: 'A chemistry teacher diagnosed with cancer turns to manufacturing drugs.'
+                    airDate: '2008-01-20'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
+                  - id: 232533
+                    title: 'Breaking Bad Fortune Teller'
+                    synopsis: 'During the Ming Dynasty, the emperor sets out for Xinjiang to advocate peace. Shortly after his absence, mysterious occurrences plague the palace and Daoist Tian Mu Tong is called to cast out demons. Together with eunuch Xiao Mo Gu and Jin Yi Wei leader Yun Xiang Rong, Mu Tong uncovers deep dark secrets and conspiracies hidden within conspiracies.'
+                    airDate: '2016-04-11'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/n8dKkbPkdEPFCFmjNvrUl1gUAYr.jpg'
+        '400':
+          description: Missing or invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingTitle:
+                  summary: Missing title
+                  value:
+                    error: 'Parameter "title" is required (query param)'
+                invalidLimit:
+                  summary: Invalid limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
+        '500':
+          description: API key is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: API key is not configured
+        '502':
+          description: Failed to reach service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach service
+
+  /v1/tv/details/{id}:
+    get:
+      tags: [TV Series]
+      summary: Get TV series details
+      description: |
+        Returns detailed information for a single TV series identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: TV series ID (must be a positive integer)
+          example: 1396
+      responses:
+        '200':
+          description: TV series details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TvSeriesSummary'
+        '400':
+          description: Missing or invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingId:
+                  summary: Missing ID
+                  value:
+                    error: 'Parameter "id" is required'
+                invalidId:
+                  summary: Non-numeric ID
+                  value:
+                    error: 'Parameter "id" must be a positive integer'
+        '500':
+          description: API key is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: API key is not configured
+        '502':
+          description: Failed to reach service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach service
+
+  /v1/tv/popular:
+    get:
+      tags: [TV Series]
+      summary: Get popular TV series
+      description: |
+        Returns the current list of popular TV series, transformed into simplified `TvSeriesSummary` objects.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+          description: Maximum number of results to return (must be a positive integer). Defaults to 20 if not provided.
+          example: 20
+      responses:
+        '200':
+          description: List of popular TV series
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Displaying 20 out of 10000 available results'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TvSeriesSummary'
+              example:
+                message: 'Displaying 2 out of 10000 available results'
+                results:
+                  - id: 1396
+                    title: 'Breaking Bad'
+                    synopsis: 'A chemistry teacher diagnosed with cancer turns to manufacturing drugs.'
+                    airDate: '2008-01-20'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
+                  - id: 66732
+                    title: 'Stranger Things'
+                    synopsis: "A love letter to the '80s classics that captivated a generation."
+                    airDate: '2016-07-15'
+                    posterUrl: 'https://image.tmdb.org/t/p/original/49WJfeN0moxb9IPfGn8m1Mg0.jpg'
+        '400':
+          description: Invalid limit parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidLimit:
+                  summary: Invalid Limit
+                  value:
+                    error: 'Parameter "limit" must be a positive integer'
+        '500':
+          description: API key is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API Key
+                  value:
+                    error: API key is not configured
+        '502':
+          description: Failed to reach service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceDown:
+                  summary: Service Unavailable
+                  value:
+                    error: Failed to reach service
+
+  # ── Reviews ──────────────────────────────────────────────────
+
+  /v1/reviews:
+    get:
+      tags: [Reviews]
+      summary: List reviews for a movie or TV title
+      description: |
+        Public, paginated list of reviews for a given media id and type.
+        Returns `200` with an empty `data` array when no reviews exist
+        (does not 404 — an unreviewed title is not an error).
+      parameters:
+        - {
+            in: query,
+            name: mediaId,
+            required: true,
+            schema: { type: integer, minimum: 1 },
+            example: 550,
+          }
+        - {
+            in: query,
+            name: mediaType,
+            required: true,
+            schema: { type: string, enum: [movie, tv] },
+          }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - {
+            in: query,
+            name: limit,
+            schema: { type: integer, minimum: 1, maximum: 100, default: 25 },
+          }
+        - {
+            in: query,
+            name: sort,
+            schema: { type: string, enum: [createdAt, id], default: createdAt },
+          }
+        - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
+      responses:
+        '200':
+          description: Paginated list of reviews
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedReviews' }
+        '400':
+          description: Validation failed (missing/invalid query params)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    post:
+      tags: [Reviews]
+      summary: Create a review
+      description: |
+        Create a review for a movie or TV show. May
+        post multiple reviews for the same title.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaId, mediaType, body]
+              properties:
+                mediaId:
+                  type: integer
+                  minimum: 1
+                  example: 550
+                mediaType:
+                  type: string
+                  enum: [movie, tv]
+                  example: movie
+                title:
+                  type: string
+                  nullable: true
+                  example: Loved it
+                body:
+                  type: string
+                  minLength: 1
+                  example: A modern classic that holds up after multiple viewings.
+      responses:
+        '201':
+          description: Review created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '400':
+          description: Validation failed or user not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/reviews/{id}:
+    get:
+      tags: [Reviews]
+      summary: Get a single review by ID
+      description: Return a single review by its database ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: Single review
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Parameter "id" must be a positive integer
+        '404':
+          description: Review not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Review not found
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    put:
+      tags: [Reviews]
+      summary: Update a review body
+      description: |
+        Update a review.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  minLength: 1
+                  example: Updated review text.
+      responses:
+        '200':
+          description: Updated review
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '400':
+          description: Validation failed or review not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '403':
+          description: Forbidden — not the author
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Forbidden
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    delete:
+      tags: [Reviews]
+      summary: Delete a review
+      description: |
+        Delete a review.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: Successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully deleted
+        '400':
+          description: Invalid ID or review not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '403':
+          description: Forbidden — not the author or admin
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Forbidden
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ── Ratings ──────────────────────────────────────────────────
+
+  /v1/ratings:
+    get:
+      tags: [Ratings]
+      summary: Aggregate rating summary for a movie or TV title
+      description: |
+        Return the average score and total rating count for a movie or TV series.
+      parameters:
+        - {
+            in: query,
+            name: mediaId,
+            required: true,
+            schema: { type: integer, minimum: 1 },
+            example: 550,
+          }
+        - {
+            in: query,
+            name: mediaType,
+            required: true,
+            schema: { type: string, enum: [movie, tv] },
+          }
+      responses:
+        '200':
+          description: Aggregate rating summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/RatingSummary' }
+        '400':
+          description: Validation failed (missing/invalid query params)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    post:
+      tags: [Ratings]
+      summary: Submit a rating
+      description: |
+        Submit a numeric score for a movie or TV show.
+        Only one rating per user per title is allowed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaId, mediaType, score]
+              properties:
+                mediaId:
+                  type: integer
+                  minimum: 1
+                  example: 550
+                mediaType:
+                  type: string
+                  enum: [movie, tv]
+                  example: movie
+                score:
+                  type: number
+                  format: float
+                  minimum: 1
+                  maximum: 10
+                  example: 8.5
+      responses:
+        '201':
+          description: Rating created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Rating' }
+        '400':
+          description: Validation failed or user not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/ratings/{id}:
+    get:
+      tags: [Ratings]
+      summary: Get a single rating by ID
+      description: Return a single rating by its database ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: Single rating
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Rating' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Parameter "id" must be a positive integer
+        '404':
+          description: Rating not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Rating not found
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    put:
+      tags: [Ratings]
+      summary: Update a rating score
+      description: Update a rating.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [score]
+              properties:
+                score:
+                  type: number
+                  format: float
+                  minimum: 1
+                  maximum: 10
+                  example: 9.0
+      responses:
+        '200':
+          description: Updated rating
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Rating' }
+        '400':
+          description: Validation failed or rating not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '403':
+          description: Forbidden — not the author
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Forbidden
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    delete:
+      tags: [Ratings]
+      summary: Delete a rating
+      description: Delete a rating.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: Successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully deleted
+        '400':
+          description: Invalid ID or rating not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '403':
+          description: Forbidden — not the author
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Forbidden
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+# ── Schemas ───────────────────────────────────────────────────
+
+components:
+  schemas:
+    MovieSummary:
+      type: object
+      description: Simplified movie object
+      properties:
+        id:
+          type: integer
+          description: movie ID
+          example: 27205
+        title:
+          type: string
+          description: Movie title
+          example: Inception
+        synopsis:
+          type: string
+          description: Brief plot overview
+          example: A thief who steals corporate secrets through dream-sharing technology.
+        releaseDate:
+          type: string
+          format: date
+          description: Theatrical release date (YYYY-MM-DD)
+          example: '2010-07-16'
+        posterUrl:
+          type: string
+          format: uri
+          description: Full URL to the original-size poster image
+          example: 'https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
+
+    TvSeriesSummary:
+      type: object
+      description: Simplified TV series object
+      properties:
+        id:
+          type: integer
+          description: TV series ID
+          example: 1396
+        title:
+          type: string
+          description: Series name
+          example: Breaking Bad
+        synopsis:
+          type: string
+          description: Brief series overview
+          example: A chemistry teacher diagnosed with cancer turns to manufacturing drugs.
+        airDate:
+          type: string
+          format: date
+          description: First air date (YYYY-MM-DD)
+          example: '2008-01-20'
+        posterUrl:
+          type: string
+          format: uri
+          description: Full URL to the original-size poster image
+          example: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: 'An unexpected error occurred'
+
+    Review:
+      type: object
+      description: A user-submitted review of a movie or TV series
+      properties:
+        id: { type: integer, example: 1 }
+        userId: { type: integer, nullable: true, example: 42 }
+        mediaId: { type: integer, example: 550 }
+        mediaType: { type: string, enum: [movie, tv], example: movie }
+        title: { type: string, nullable: true, example: 'Loved it' }
+        body: { type: string, example: 'A modern classic' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        user:
+          type: object
+          nullable: true
+          description: Author info; null if the original user was deleted (onDelete SetNull)
+          properties:
+            id: { type: integer, example: 42 }
+            username: { type: string, example: alice }
+
+    PaginatedReviews:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Review' }
+        pagination:
+          type: object
+          properties:
+            page: { type: integer, example: 1 }
+            limit: { type: integer, example: 25 }
+            total: { type: integer, example: 53 }
+            totalPages: { type: integer, example: 3 }
+
+    RatingSummary:
+      type: object
+      description: Aggregate rating data for a single title
+      properties:
+        mediaId: { type: integer, example: 550 }
+        mediaType: { type: string, enum: [movie, tv], example: movie }
+        average:
+          type: number
+          format: float
+          nullable: true
+          description: Average score (1.0–10.0); null when no ratings exist
+          example: 7.5
+        count: { type: integer, example: 4 }
+
+    Rating:
+      type: object
+      description: A user-submitted numeric rating for a movie or TV series
+      properties:
+        id: { type: integer, example: 1 }
+        userId: { type: integer, nullable: true, example: 42 }
+        mediaId: { type: integer, example: 550 }
+        mediaType: { type: string, enum: [movie, tv], example: movie }
+        score:
+          type: number
+          format: float
+          minimum: 1
+          maximum: 10
+          example: 8.5
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+/// Discriminator: whether a rating/review targets a movie or TV show.
+/// Values must match TMDB's media_type strings exactly so client code
+/// can pass them through without mapping.
+enum MediaType {
+  movie
+  tv
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  ratings   Rating[]
+  reviews   Review[]
+
+  @@map("users")
+}
+
+/// One rating per (user, mediaId, mediaType) tuple — enforced by unique index.
+/// Re-submitting the same tuple upserts the score rather than creating a duplicate row.
+model Rating {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  mediaId   Int       @map("media_id")
+  mediaType MediaType @map("media_type")
+  /// 1.0–10.0 inclusive
+  score     Float
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// Enforces the upsert constraint: one score per user per title.
+  @@unique([userId, mediaId, mediaType])
+  /// Speeds up public GET /ratings?mediaId=&mediaType= lookups.
+  @@index([mediaId, mediaType])
+  @@map("ratings")
+}
+
+/// Reviews are separate from ratings so a user can write prose without
+/// also supplying a numeric score, and vice-versa.
+model Review {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  mediaId   Int       @map("media_id")
+  mediaType MediaType @map("media_type")
+  /// Optional headline; body is always required.
+  title     String?
+  body      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([mediaId, mediaType])
+  @@map("reviews")
+}

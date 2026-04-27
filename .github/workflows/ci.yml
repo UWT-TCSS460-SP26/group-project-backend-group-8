@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, sprint-2-persistence]
   push:
-    branches: [main]
+    branches: [main, sprint-2-persistence]
 
 jobs:
   lint-and-test:
@@ -19,6 +19,12 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Format
+        run: npm run format
 
       - name: Format Check
         run: npm run format:check
