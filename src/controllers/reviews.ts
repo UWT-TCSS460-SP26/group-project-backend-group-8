@@ -154,7 +154,10 @@ export const deleteReview = async (request: Request, response: Response) => {
       return response.status(404).json({ error: 'Review not found' });
     }
 
-    if (role === Role.USER && review.userId !== userId) {
+    const isAdmin = role === Role.ADMIN;
+    const isOwner = review.userId === userId;
+
+    if (!isAdmin && !isOwner) {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
