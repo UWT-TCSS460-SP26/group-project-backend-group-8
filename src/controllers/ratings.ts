@@ -32,6 +32,27 @@ export const getRatingsSummary = async (_request: Request, response: Response) =
   }
 };
 
+/**
+ * Public — get rating by id
+ * No auth required.
+ */
+export const getRatingById = async (request: Request, response: Response) => {
+  const id = Number(request.params.id);
+
+  try {
+    const rating = await prisma.rating.findUnique({ where: { id } });
+
+    if (!rating) {
+      response.status(404).json({ error: 'Rating not found' });
+      return;
+    }
+
+    response.status(200).json({ data: rating });
+  } catch (_error) {
+    response.status(500).json({ error: 'Failed to retrieve rating' });
+  }
+};
+
 export const postRating = async (request: Request, response: Response) => {
   const { mediaId, mediaType, score } = request.body;
   const userId = Number(request.user?.sub);

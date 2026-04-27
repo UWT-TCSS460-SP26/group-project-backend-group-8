@@ -40,14 +40,44 @@ export const getReviews = async (_request: Request, response: Response) => {
 };
 
 /**
+ * Public — get review by id
+ * No auth required.
+ */
+export const getReviewById = async (request: Request, response: Response) => {
+  const id = Number(request.params.id);
+
+  try {
+    const review = await prisma.review.findUnique({
+      where: { id },
+      include: { user: { select: { id: true, username: true } } },
+    });
+
+    if (!review) {
+      response.status(404).json({ error: 'Review not found' });
+      return;
+    }
+
+    response.status(200).json({ data: review });
+  } catch (_error) {
+    response.status(500).json({ error: 'Failed to retrieve review' });
+  }
+};
+
+/**
  * POST /v1/reviews
  * Auth required. Creates a review for a movie or TV show.
  * A user may post multiple reviews for the same title (no unique constraint on reviews).
+ * If the userId from the JWT refers to a user that doesn't exist in the database (e.g. the
+ * account was deleted after the token was issued), Prisma will throw a foreign key constraint
+ * error.
  */
 export const createReview = async (request: Request, response: Response) => {
   const { mediaId, mediaType, title, body } = request.body as PostReviewBody;
-  const { sub } = request.user!;
-  const userId = Number(sub);
+  const userId = Number(request.user?.sub);
+
+  if (!userId) {
+    return response.status(400).json({ error: 'User not found' });
+  }
 
   try {
     const review = await prisma.review.create({
