@@ -46,58 +46,6 @@ paths:
                     type: string
                     example: alive
 
-  # ── Auth ─────────────────────────────────────────────────────
-
-  /auth/dev-login:
-    post:
-      tags: [General]
-      summary: Dev login (temporary)
-      description: |
-        **Sprint 2 only — do not deploy to production.**
-        Accepts a username, find-or-creates a regular user row, and returns
-        a signed JWT. Does not validate a password. Admin accounts must be
-        seeded separately.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [username]
-              properties:
-                username:
-                  type: string
-                  example: alice
-                email:
-                  type: string
-                  format: email
-                  example: alice@example.test
-      responses:
-        '200':
-          description: JWT token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        '400':
-          description: Missing username
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-              example:
-                error: username is required
-        '500':
-          description: JWT_SECRET not configured
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-              example:
-                error: JWT_SECRET is not configured
-
   # ── Movies ────────────────────────────────────────────────────
 
   /v1/movie/search:
@@ -1196,9 +1144,3 @@ components:
           example: 8.5
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT

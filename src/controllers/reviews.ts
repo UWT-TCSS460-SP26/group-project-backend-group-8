@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
-import { $Enums, Prisma } from '@/generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { PostReviewBody, GetReviewsQuery } from '@/middleware/validation';
-import Role = $Enums.Role;
 
 /**
  * Public — list reviews for a TMDB title with pagination and sorting.
@@ -154,7 +153,7 @@ export const deleteReview = async (request: Request, response: Response) => {
       return response.status(404).json({ error: 'Review not found' });
     }
 
-    const isAdmin = role === Role.ADMIN;
+    const isAdmin = role === 'Admin';
     const isOwner = review.userId === userId;
 
     if (!isAdmin && !isOwner) {

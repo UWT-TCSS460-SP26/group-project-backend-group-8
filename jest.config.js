@@ -6,8 +6,11 @@ module.exports = {
   testMatch: ['**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', { tsconfig: 'tests/tsconfig.json' }],
+    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: 'tests/tsconfig.json' }],
   },
+  transformIgnorePatterns: [
+    '/node_modules/(?!jose|jwks-rsa)/'
+  ],
   setupFiles: ['<rootDir>/tests/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

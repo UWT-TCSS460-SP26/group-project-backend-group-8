@@ -310,3 +310,51 @@ As a user, I want to write a review for a movie or show so that I can share more
 As a frontend developer, I want OpenAPI documentation and automated tests for every new endpoint so that I can integrate without reading source code and trust the API behaves as documented.
 
 -Charlene
+
+# Sprint-3 Meeting
+
+4/27/2026
+
+5:00 pm - 6:30 pm
+
+Attending: Caleb, Christina, Charlene
+
+Meeting Manager: Christina Blackwell
+
+Meeting Scribe: Charlene Jarrell
+
+## Agenda Item 1:
+
+_Project Setup_
+
+Completed project setup in sprint-3 branch.
+
+
+## Agenda Item 2:
+
+_Sprint-3 Tasks (need to be assigned)_
+
+1. As a team, we want our API to verify real tokens issued by the shared Auth² service so that every authenticated user across the course's APIs is one user, identified the same way everywhere.
+
+2. As a user, I want my actions to be tied to my Auth² account so that my ratings and reviews follow me across deployments and partner apps.
+
+3. As a teammate, I want the test suite to keep working after we replace dev-login with real auth so that we can verify our routes without a real identity provider in the loop.
+
+4. As a visitor, I want to file a bug report against your API so that the team building on top of it can tell you when something is broken without finding you on Slack.
+
+5. As a visitor, I want to see a movie or show's details alongside what your community thinks of it so that I can decide whether it's worth watching.
+
+6. As a frontend developer, I want to call your API at a public HTTPS URL backed by a real database so that I can integrate against it from anywhere, not just from a teammate's laptop.
+
+7. As a frontend developer, I want clear documentation, predictable errors, and a way to verify your API is alive so that I can build against it without reading your source.
+
+
+## Agenda Item 3:
+
+_Questions_
+
+Q: Since we know that movie and tv show IDs do not overlap in TMDB or our database, should we use a route param instead of query param to get ratings and reviews for a movie/show?
+A: Turns out, TMDB movies and tv shows may have overlapping IDs, so we do need to specify media type in the query params
+
+Q: Do we need requireAuth middleware?
+A: Yes, copied from class demo

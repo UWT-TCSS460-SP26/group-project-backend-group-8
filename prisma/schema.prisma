@@ -9,11 +9,6 @@ datasource db {
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-enum Role {
-  USER
-  ADMIN
-}
-
 /// Discriminator: whether a rating/review targets a movie or TV show.
 /// Values must match TMDB's media_type strings exactly so client code
 /// can pass them through without mapping.
