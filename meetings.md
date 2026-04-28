@@ -358,3 +358,5 @@ A: Turns out, TMDB movies and tv shows may have overlapping IDs, so we do need t
 
 Q: Do we need requireAuth middleware?
 A: Yes, copied from class demo
+
+Q: Is it safe to merge into main? 
