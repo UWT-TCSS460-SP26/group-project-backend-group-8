@@ -17,7 +17,7 @@ const spec = YAML.parse(specFile);
 app.get('/openapi.json', (_request: Request, response: Response) => {
   response.json(spec);
 });
-app.use('/api-docs', apiReference({ spec: { url: '/openapi.json' } }));
+app.use('/api-docs', apiReference({ url: '/openapi.json' }));
 
 // Routes
 app.use(routes);

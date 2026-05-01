@@ -21,6 +21,10 @@ tags:
     description: Movie proxy routes — search, details, and popular listings
   - name: TV Series
     description: TV series proxy routes — search, details, and popular listings
+  - name: Reviews
+    description: User-submitted reviews persisted via Prisma/Postgres
+  - name: Ratings
+    description: User-submitted scores and aggregate summaries
 
 paths:
   # ── General ───────────────────────────────────────────────────
@@ -503,9 +507,538 @@ paths:
                   value:
                     error: Failed to reach service
 
+  # ── Reviews ──────────────────────────────────────────────────
+
+  /v1/reviews:
+    get:
+      tags: [Reviews]
+      summary: List reviews for a movie or TV title
+      description: |
+        Public, paginated list of reviews for a given media id and type.
+        Returns `200` with an empty `data` array when no reviews exist
+        (does not 404 — an unreviewed title is not an error).
+      parameters:
+        - {
+            in: query,
+            name: mediaId,
+            required: true,
+            schema: { type: integer, minimum: 1 },
+            example: 550,
+          }
+        - {
+            in: query,
+            name: mediaType,
+            required: true,
+            schema: { type: string, enum: [movie, tv] },
+          }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - {
+            in: query,
+            name: limit,
+            schema: { type: integer, minimum: 1, maximum: 100, default: 25 },
+          }
+        - {
+            in: query,
+            name: sort,
+            schema: { type: string, enum: [createdAt, id], default: createdAt },
+          }
+        - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
+      responses:
+        '200':
+          description: Paginated list of reviews
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedReviews' }
+        '400':
+          description: Validation failed (missing/invalid query params)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    post:
+      tags: [Reviews]
+      summary: Create a review
+      description: |
+        Create a review for a movie or TV show. A user can only create one review per title.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaId, mediaType, body]
+              properties:
+                mediaId:
+                  type: integer
+                  minimum: 1
+                  example: 550
+                mediaType:
+                  type: string
+                  enum: [movie, tv]
+                  example: movie
+                title:
+                  type: string
+                  nullable: true
+                  example: Loved it
+                body:
+                  type: string
+                  minLength: 1
+                  example: A modern classic that holds up after multiple viewings.
+      responses:
+        '201':
+          description: Review created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '400':
+          description: Validation failed or user not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '409':
+          description: User has already reviewed this title
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: User has already reviewed this title
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/reviews/{id}:
+    get:
+      tags: [Reviews]
+      summary: Get a single review by ID
+      description: Return a single review by its database ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: Single review
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Parameter "id" must be a positive integer
+        '404':
+          description: Review not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Review not found
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    put:
+      tags: [Reviews]
+      summary: Update a review body
+      description: |
+        Update a review.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                title:
+                  type: string
+                  nullable: true
+                  example: An even better title
+                body:
+                  type: string
+                  minLength: 1
+                  example: Updated review text.
+      responses:
+        '200':
+          description: Updated review
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Review' }
+        '400':
+          description: Validation failed or review not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '403':
+          description: Forbidden — not the author
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Forbidden
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    delete:
+      tags: [Reviews]
+      summary: Delete a review
+      description: |
+        Delete a review.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: Successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully deleted
+        '400':
+          description: Invalid ID or review not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '403':
+          description: Forbidden — not the author or admin
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Forbidden
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ── Ratings ──────────────────────────────────────────────────
+
+  /v1/ratings:
+    get:
+      tags: [Ratings]
+      summary: Aggregate rating summary for a movie or TV title
+      description: |
+        Return the average score and total rating count for a movie or TV series.
+      parameters:
+        - {
+            in: query,
+            name: mediaId,
+            required: true,
+            schema: { type: integer, minimum: 1 },
+            example: 550,
+          }
+        - {
+            in: query,
+            name: mediaType,
+            required: true,
+            schema: { type: string, enum: [movie, tv] },
+          }
+      responses:
+        '200':
+          description: Aggregate rating summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/RatingSummary' }
+        '400':
+          description: Validation failed (missing/invalid query params)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    post:
+      tags: [Ratings]
+      summary: Submit a rating
+      description: |
+        Submit a numeric score for a movie or TV show.
+        Only one rating per user per title is allowed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaId, mediaType, score]
+              properties:
+                mediaId:
+                  type: integer
+                  minimum: 1
+                  example: 550
+                mediaType:
+                  type: string
+                  enum: [movie, tv]
+                  example: movie
+                score:
+                  type: number
+                  format: float
+                  minimum: 1
+                  maximum: 10
+                  example: 8.5
+      responses:
+        '201':
+          description: Rating created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Rating' }
+        '400':
+          description: Validation failed or user not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '409':
+          description: User has already rated this title
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: User has already rated this title
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/ratings/{id}:
+    get:
+      tags: [Ratings]
+      summary: Get a single rating by ID
+      description: Return a single rating by its database ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: Single rating
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Rating' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Parameter "id" must be a positive integer
+        '404':
+          description: Rating not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Rating not found
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    put:
+      tags: [Ratings]
+      summary: Update a rating score
+      description: Update a rating.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [score]
+              properties:
+                score:
+                  type: number
+                  format: float
+                  minimum: 1
+                  maximum: 10
+                  example: 9.0
+      responses:
+        '200':
+          description: Updated rating
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Rating' }
+        '400':
+          description: Validation failed or rating not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '403':
+          description: Forbidden — not the author
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Forbidden
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    delete:
+      tags: [Ratings]
+      summary: Delete a rating
+      description: Delete a rating.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1
+      responses:
+        '200':
+          description: Successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully deleted
+        '400':
+          description: Invalid ID or rating not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Missing or malformed Authorization header
+        '403':
+          description: Forbidden — not the author
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Forbidden
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
 # ── Schemas ───────────────────────────────────────────────────
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     MovieSummary:
       type: object
@@ -568,3 +1101,62 @@ components:
           type: string
           description: Human-readable error message
           example: 'An unexpected error occurred'
+
+    Review:
+      type: object
+      description: A user-submitted review of a movie or TV series
+      properties:
+        id: { type: integer, example: 1 }
+        userId: { type: integer, nullable: true, example: 42 }
+        username: { type: string, example: 'alice' }
+        mediaId: { type: integer, example: 550 }
+        mediaType: { type: string, enum: [movie, tv], example: movie }
+        title: { type: string, nullable: true, example: 'Loved it' }
+        body: { type: string, example: 'A modern classic' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    PaginatedReviews:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Review' }
+        pagination:
+          type: object
+          properties:
+            page: { type: integer, example: 1 }
+            limit: { type: integer, example: 25 }
+            total: { type: integer, example: 53 }
+            totalPages: { type: integer, example: 3 }
+
+    RatingSummary:
+      type: object
+      description: Aggregate rating data for a single title
+      properties:
+        mediaId: { type: integer, example: 550 }
+        mediaType: { type: string, enum: [movie, tv], example: movie }
+        average:
+          type: number
+          format: float
+          nullable: true
+          description: Average score (1.0–10.0); null when no ratings exist
+          example: 7.5
+        count: { type: integer, example: 4 }
+
+    Rating:
+      type: object
+      description: A user-submitted numeric rating for a movie or TV series
+      properties:
+        id: { type: integer, example: 1 }
+        userId: { type: integer, nullable: true, example: 42 }
+        mediaId: { type: integer, example: 550 }
+        mediaType: { type: string, enum: [movie, tv], example: movie }
+        score:
+          type: number
+          format: float
+          minimum: 1
+          maximum: 10
+          example: 8.5
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }

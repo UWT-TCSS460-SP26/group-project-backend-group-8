@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+/// Discriminator: whether a rating/review targets a movie or TV show.
+/// Values must match TMDB's media_type strings exactly so client code
+/// can pass them through without mapping.
+enum MediaType {
+  movie
+  tv
+}
+
+enum Role {
+  USER        @map("user")
+  MODERATOR   @map("moderator")
+  ADMIN       @map("admin")
+  SUPER_ADMIN @map("super_admin")
+  OWNER       @map("owner")
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        Int      @id @default(autoincrement())
+  subjectId String   @unique @map("subject_id")
+  username  String   @unique
+  email     String   @unique
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  ratings   Rating[]
+  reviews   Review[]
+
+  @@unique([id, username])
+  @@map("users")
+}
+
+/// One rating per (user, mediaId, mediaType) tuple — enforced by unique index.
+/// Re-submitting the same tuple upserts the score rather than creating a duplicate row.
+model Rating {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  mediaId   Int       @map("media_id")
+  mediaType MediaType @map("media_type")
+  /// 1.0–10.0 inclusive
+  score     Float
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// Enforces the upsert constraint: one score per user per title.
+  @@unique([userId, mediaId, mediaType])
+  @@index([mediaId, mediaType])
+  @@map("ratings")
+}
+
+/// Reviews are separate from ratings so a user can write prose without
+/// also supplying a numeric score, and vice-versa.
+model Review {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  username  String    @default("anonymous")
+  mediaId   Int       @map("media_id")
+  mediaType MediaType @map("media_type")
+  /// Optional headline; body is always required.
+  title     String?
+  body      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User?     @relation(fields: [userId, username], references: [id, username], onDelete: SetDefault, onUpdate: Cascade)
+
+  @@unique([userId, mediaId, mediaType])
+  @@index([mediaId, mediaType])
+  @@map("reviews")
+}
