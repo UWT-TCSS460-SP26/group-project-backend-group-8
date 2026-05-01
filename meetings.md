@@ -329,7 +329,6 @@ _Project Setup_
 
 Completed project setup in sprint-3 branch.
 
-
 ## Agenda Item 2:
 
 _Sprint-3 Tasks (need to be assigned)_
@@ -348,7 +347,6 @@ _Sprint-3 Tasks (need to be assigned)_
 
 7. As a frontend developer, I want clear documentation, predictable errors, and a way to verify your API is alive so that I can build against it without reading your source.
 
-
 ## Agenda Item 3:
 
 _Questions_
@@ -359,4 +357,4 @@ A: Turns out, TMDB movies and tv shows may have overlapping IDs, so we do need t
 Q: Do we need requireAuth middleware?
 A: Yes, copied from class demo
 
-Q: Is it safe to merge into main? 
+Q: Is it safe to merge into main?
