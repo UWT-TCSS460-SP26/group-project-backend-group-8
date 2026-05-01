@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { PostReviewBody, GetReviewsQuery } from '@/middleware/validation';
+import { resolveLocalUser } from '@/auth/resolveLocalUser';
+import { hasRoleAtLeast } from '@/middleware/requireAuth';
 
 /**
  * Public — list reviews for a TMDB title with pagination and sorting.
@@ -19,7 +21,6 @@ export const getReviews = async (_request: Request, response: Response) => {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { [sort]: order },
-        include: { user: { select: { id: true, username: true } } },
       }),
       prisma.review.count({ where }),
     ]);
@@ -48,7 +49,6 @@ export const getReviewById = async (request: Request, response: Response) => {
   try {
     const review = await prisma.review.findUnique({
       where: { id },
-      include: { user: { select: { id: true, username: true } } },
     });
 
     if (!review) {
@@ -72,16 +72,15 @@ export const getReviewById = async (request: Request, response: Response) => {
  */
 export const createReview = async (request: Request, response: Response) => {
   const { mediaId, mediaType, title, body } = request.body as PostReviewBody;
-  const userId = Number(request.user?.sub);
-
-  if (!userId) {
-    return response.status(400).json({ error: 'User not found' });
-  }
+  const user = await resolveLocalUser(request);
+  const userId = user.id;
+  const username = user.username;
 
   try {
     const review = await prisma.review.create({
       data: {
         userId,
+        username,
         mediaId,
         mediaType,
         title,
@@ -96,6 +95,10 @@ export const createReview = async (request: Request, response: Response) => {
         response.status(404).json({ error: 'User not found' });
         return;
       }
+      if (error.code === 'P2002') {
+        response.status(409).json({ error: 'User has already reviewed this title' });
+        return;
+      }
     }
     response.status(500).json({ error: 'Failed to create review' });
   }
@@ -103,9 +106,9 @@ export const createReview = async (request: Request, response: Response) => {
 
 export const updateReview = async (request: Request, response: Response) => {
   const id = Number(request.params.id);
-  const { body } = request.body;
-  const { sub } = request.user!;
-  const userId = Number(sub);
+  const { title, body } = request.body;
+  const user = await resolveLocalUser(request);
+  const userId = user.id;
 
   try {
     const review = await prisma.review.findUnique({
@@ -121,27 +124,26 @@ export const updateReview = async (request: Request, response: Response) => {
       return response.status(403).json({ error: 'Forbidden' });
     }
 
+    const data: { title?: string; body: string } = { body };
+    if (title) {
+      data.title = title;
+    }
+
     const updatedReview = await prisma.review.update({
       where: { id },
-      data: { body },
+      data,
     });
 
     response.status(200).json({ data: updatedReview });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        response.status(400).json({ error: 'Rating not found' });
-        return;
-      }
-    }
+  } catch (_error) {
     response.status(500).json({ error: 'Failed to update review' });
   }
 };
 
 export const deleteReview = async (request: Request, response: Response) => {
   const id = Number(request.params.id);
-  const { sub, role } = request.user!;
-  const userId = Number(sub);
+  const user = await resolveLocalUser(request);
+  const userId = user.id;
 
   try {
     const review = await prisma.review.findUnique({
@@ -153,7 +155,7 @@ export const deleteReview = async (request: Request, response: Response) => {
       return response.status(404).json({ error: 'Review not found' });
     }
 
-    const isAdmin = role === 'Admin';
+    const isAdmin = hasRoleAtLeast(request.user?.role, 'Admin');
     const isOwner = review.userId === userId;
 
     if (!isAdmin && !isOwner) {
@@ -163,13 +165,7 @@ export const deleteReview = async (request: Request, response: Response) => {
     await prisma.review.delete({ where: { id } });
 
     response.status(200).json({ message: 'Successfully deleted' });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        response.status(400).json({ error: 'Review not found' });
-        return;
-      }
-    }
+  } catch (_error) {
     response.status(500).json({ error: 'Failed to delete review' });
   }
 };

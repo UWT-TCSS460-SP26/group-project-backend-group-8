@@ -564,8 +564,7 @@ paths:
       tags: [Reviews]
       summary: Create a review
       description: |
-        Create a review for a movie or TV show. May
-        post multiple reviews for the same title.
+        Create a review for a movie or TV show. A user can only create one review per title.
       security:
         - bearerAuth: []
       requestBody:
@@ -613,6 +612,13 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
               example:
                 error: Missing or malformed Authorization header
+        '409':
+          description: User has already reviewed this title
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: User has already reviewed this title
         '500':
           description: Database error
           content:
@@ -680,6 +686,10 @@ paths:
               type: object
               required: [body]
               properties:
+                title:
+                  type: string
+                  nullable: true
+                  example: An even better title
                 body:
                   type: string
                   minLength: 1
@@ -860,6 +870,13 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
               example:
                 error: Missing or malformed Authorization header
+        '409':
+          description: User has already rated this title
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: User has already rated this title
         '500':
           description: Database error
           content:
@@ -1017,6 +1034,11 @@ paths:
 # ── Schemas ───────────────────────────────────────────────────
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     MovieSummary:
       type: object
@@ -1086,19 +1108,13 @@ components:
       properties:
         id: { type: integer, example: 1 }
         userId: { type: integer, nullable: true, example: 42 }
+        username: { type: string, example: 'alice' }
         mediaId: { type: integer, example: 550 }
         mediaType: { type: string, enum: [movie, tv], example: movie }
         title: { type: string, nullable: true, example: 'Loved it' }
         body: { type: string, example: 'A modern classic' }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-        user:
-          type: object
-          nullable: true
-          description: Author info; null if the original user was deleted (onDelete SetNull)
-          properties:
-            id: { type: integer, example: 42 }
-            username: { type: string, example: alice }
 
     PaginatedReviews:
       type: object

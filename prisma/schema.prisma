@@ -17,18 +17,30 @@ enum MediaType {
   tv
 }
 
+enum Role {
+  USER        @map("user")
+  MODERATOR   @map("moderator")
+  ADMIN       @map("admin")
+  SUPER_ADMIN @map("super_admin")
+  OWNER       @map("owner")
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
   id        Int      @id @default(autoincrement())
+  subjectId String   @unique @map("subject_id")
   username  String   @unique
   email     String   @unique
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
   role      Role     @default(USER)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   ratings   Rating[]
   reviews   Review[]
 
+  @@unique([id, username])
   @@map("users")
 }
 
@@ -47,7 +59,6 @@ model Rating {
 
   /// Enforces the upsert constraint: one score per user per title.
   @@unique([userId, mediaId, mediaType])
-  /// Speeds up public GET /ratings?mediaId=&mediaType= lookups.
   @@index([mediaId, mediaType])
   @@map("ratings")
 }
@@ -57,6 +68,7 @@ model Rating {
 model Review {
   id        Int       @id @default(autoincrement())
   userId    Int?      @map("user_id")
+  username  String    @default("anonymous")
   mediaId   Int       @map("media_id")
   mediaType MediaType @map("media_type")
   /// Optional headline; body is always required.
@@ -64,8 +76,9 @@ model Review {
   body      String
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
-  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?     @relation(fields: [userId, username], references: [id, username], onDelete: SetDefault, onUpdate: Cascade)
 
+  @@unique([userId, mediaId, mediaType])
   @@index([mediaId, mediaType])
   @@map("reviews")
 }

@@ -7,9 +7,12 @@ const connectionString = process.env.DATABASE_URL!;
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
-const USERS = Array.from({ length: 50 }, () => ({
+const USERS = Array.from({ length: 50 }, (_, i) => ({
+  subjectId: `seed-user-${i + 2}`,
   username: faker.internet.username().toLowerCase(),
   email: faker.internet.email().toLowerCase(),
+  firstName: faker.person.firstName(),
+  lastName: faker.person.lastName(),
 }));
 
 function randomItem<T>(array: T[]): T {
@@ -31,6 +34,7 @@ async function main(): Promise<void> {
     where: { username: 'admin' },
     update: {},
     create: {
+      subjectId: 'seed-user-1',
       username: 'admin',
       email: 'admin@dev.local',
       role: Role.ADMIN,
@@ -46,7 +50,8 @@ async function main(): Promise<void> {
 
   console.log(`Created ${createdUsers.length} users`);
 
-  const userIds = [...createdUsers.map((u) => u.id), admin.id];
+  const allUsers = [...createdUsers, admin];
+  const userIds = allUsers.map((u) => u.id);
 
   const ratingData: Omit<Rating, 'id' | 'createdAt' | 'updatedAt'>[] = [];
   const ratingKeys = new Set<string>();
@@ -73,8 +78,10 @@ async function main(): Promise<void> {
   const reviewData: Omit<Review, 'id' | 'createdAt' | 'updatedAt'>[] = [];
   const reviewKeys = new Set<string>();
   while (reviewData.length < 500) {
+    const user = randomItem(allUsers);
     const review = {
-      userId: randomItem(userIds),
+      userId: user.id,
+      username: user.username,
       mediaId: faker.number.int({ min: 1, max: 1000 }),
       mediaType: randomItem([MediaType.movie, MediaType.tv]),
       title: faker.lorem.sentence(),

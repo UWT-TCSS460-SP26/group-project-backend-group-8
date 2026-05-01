@@ -19,6 +19,7 @@ export const PostReviewSchema = z.object({
 });
 
 export const UpdateReviewSchema = z.object({
+  title: z.string().min(1).optional(),
   body: z.string().min(1),
 });
 
