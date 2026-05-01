@@ -24,8 +24,10 @@ declare global {
   }
 }
 
-const issuer = process.env.AUTH_ISSUER;
-const audience = process.env.API_AUDIENCE;
+const issuer =
+  process.env.AUTH_ISSUER || (process.env.NODE_ENV === 'test' ? 'https://test.issuer' : undefined);
+const audience =
+  process.env.API_AUDIENCE || (process.env.NODE_ENV === 'test' ? 'test-audience' : undefined);
 
 if (!issuer || !audience) {
   // Fail fast at boot — middleware would surface this as 500 on every request otherwise.
