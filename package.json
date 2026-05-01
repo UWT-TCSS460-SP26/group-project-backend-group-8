@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
-    "build": "prisma generate && tsc && tsc-alias",
+    "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -25,6 +25,9 @@
     "prisma:reset": "npx prisma migrate reset",
     "db:setup": "npx prisma migrate dev && npx prisma generate && tsx prisma/seed.ts"
   },
+  "_moduleAliases": {
+    "@": "dist"
+  },
   "dependencies": {
     "@faker-js/faker": "^10.4.0",
     "@prisma/adapter-pg": "^7.8.0",
@@ -35,6 +38,7 @@
     "express": "^5.2.1",
     "express-jwt": "^8.5.1",
     "jwks-rsa": "^4.0.1",
+    "module-alias": "^2.2.3",
     "pg": "^8.20.0",
     "prisma": "^7.8.0",
     "yaml": "^2.8.3"
@@ -55,7 +59,6 @@
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.10",
     "tsx": "^4.21.0",
     "typescript": "~5.9"
   }
