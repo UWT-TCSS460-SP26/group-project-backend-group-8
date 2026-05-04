@@ -317,44 +317,70 @@ As a frontend developer, I want OpenAPI documentation and automated tests for ev
 
 5:00 pm - 6:30 pm
 
-Attending: Caleb, Christina, Charlene
+Attending: All
 
-Meeting Manager: Christina Blackwell
+Meeting Manager: Charlene Jarrell
 
-Meeting Scribe: Charlene Jarrell
+Meeting Scribe: Mansur Yassin
 
 ## Agenda Item 1:
 
-_Project Setup_
+_Auth² check-off and project setup recap_
 
-Completed project setup in sprint-3 branch.
+1. Walked through the Auth² check-off as a team to make sure everyone understands the JWKS verification flow, the audience claim (`group-8-api`), and the PascalCase role claim.
+2. Completed project setup in the sprint-3 branch and confirmed it is safe to merge into main — the setup branch only swaps dev-login + JWT_SECRET for the JWKS-based middleware, adds `subjectId`, and wires `resolveLocalUser`. Existing routes still pass tests behind the new middleware.
+3. Decided on role-gating policy: use **exact-match** (`requireRole('Admin')`) for narrow gates and the **hierarchy** form (`requireRoleAtLeast('Admin')`) for "any privileged user" gates. Default to exact-match unless a peer review says otherwise.
 
 ## Agenda Item 2:
 
-_Sprint-3 Tasks (need to be assigned)_
+_Sprint-3 story assignments_
 
-1. As a team, we want our API to verify real tokens issued by the shared Auth² service so that every authenticated user across the course's APIs is one user, identified the same way everywhere.
+Charlene will go through stories 1 and 3, Caleb will take stories 2 and 6, Christina will take story 5, and Mansur will take stories 4 and 7.
 
-2. As a user, I want my actions to be tied to my Auth² account so that my ratings and reviews follow me across deployments and partner apps.
+1. **Charlene** — As a team, we want our API to verify real tokens issued by the shared Auth² service so that every authenticated user across the course's APIs is one user, identified the same way everywhere.
 
-3. As a teammate, I want the test suite to keep working after we replace dev-login with real auth so that we can verify our routes without a real identity provider in the loop.
+2. **Caleb** — As a user, I want my actions to be tied to my Auth² account so that my ratings and reviews follow me across deployments and partner apps. _(Includes the `subjectId` column and the `Issue` model migration so Sprint 4 inherits a stable schema.)_
 
-4. As a visitor, I want to file a bug report against your API so that the team building on top of it can tell you when something is broken without finding you on Slack.
+3. **Charlene** — As a teammate, I want the test suite to keep working after we replace dev-login with real auth so that we can verify our routes without a real identity provider in the loop.
 
-5. As a visitor, I want to see a movie or show's details alongside what your community thinks of it so that I can decide whether it's worth watching.
+4. **Mansur** — As a visitor, I want to file a bug report against your API so that the team building on top of it can tell you when something is broken without finding you on Slack.
 
-6. As a frontend developer, I want to call your API at a public HTTPS URL backed by a real database so that I can integrate against it from anywhere, not just from a teammate's laptop.
+5. **Christina** — As a visitor, I want to see a movie or show's details alongside what your community thinks of it so that I can decide whether it's worth watching.
 
-7. As a frontend developer, I want clear documentation, predictable errors, and a way to verify your API is alive so that I can build against it without reading your source.
+6. **Caleb** — As a frontend developer, I want to call your API at a public HTTPS URL backed by a real database so that I can integrate against it from anywhere, not just from a teammate's laptop.
+
+7. **Mansur** — As a frontend developer, I want clear documentation, predictable errors, and a way to verify your API is alive so that I can build against it without reading your source.
 
 ## Agenda Item 3:
 
-_Questions_
+_Questions and coordination_
 
 Q: Since we know that movie and tv show IDs do not overlap in TMDB or our database, should we use a route param instead of query param to get ratings and reviews for a movie/show?
-A: Turns out, TMDB movies and tv shows may have overlapping IDs, so we do need to specify media type in the query params
+A: Turns out, TMDB movies and tv shows may have overlapping IDs, so we do need to specify media type in the query params.
 
-Q: Do we need requireAuth middleware?
-A: Yes, copied from class demo
+Q: Do we need `requireAuth` middleware?
+A: Yes, copied from class demo and adapted to verify against the Auth² JWKS rather than HS256 + JWT_SECRET.
 
-Q: Is it safe to merge into main?
+Q: Is it safe to merge sprint-3-setup into main?
+A: Yes — it only swaps the auth internals; existing tests still pass. Merge so everyone can branch off main for their assigned story.
+
+Q: How should we coordinate story 4 (`POST /v1/issues`), which depends on the Issue model from story 2?
+A: Caleb will publish the Issue schema field shape in Discord (title, description, optional reproSteps, optional reporterEmail, status enum) ahead of time so Mansur's controller and OpenAPI path can be written against the agreed contract and dropped in the moment story 2 lands.
+
+Q: How should auth-protected tests run without a real identity provider?
+A: Story 3's test stub will read an `X-Test-User` JSON header and inject `request.user` in `NODE_ENV=test`. Everyone writing auth-protected tests should use that pattern instead of minting real tokens.
+
+Q: Where does the safe error handler need to live for story 7?
+A: It must be the last middleware mounted in `app.ts` so it catches anything that escapes a controller and returns a generic JSON envelope without leaking stack traces.
+
+## Agenda Item 4:
+
+_Action items and next sync_
+
+- Everyone branches off `main` for their assigned story today.
+- Each PR is scoped to exactly one story; reviewers reject PRs that bundle multiple stories so review and blame stay readable.
+- Caleb to publish the Issue schema field shape in Discord by end of day so dependent work can start.
+- Christina to coordinate with Mansur on the enriched detail route's response shape (story 5 is the consumer of any review/rating aggregation Mansur's tests rely on).
+- Charlene to confirm with the professor that the audience name `group-8-api` is the one registered with Auth² for our group, and update `.env.example` + Render env vars accordingly.
+- Story 6 owner (Caleb) to wire the CORS allowlist env var and run `prisma migrate deploy` against the Render Postgres once story 2's migration lands.
+- Next sync: Friday 5/1 at 2:30 pm (regular Friday slot) for mid-sprint progress check.

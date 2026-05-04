@@ -25,6 +25,8 @@ tags:
     description: User-submitted reviews persisted via Prisma/Postgres
   - name: Ratings
     description: User-submitted scores and aggregate summaries
+  - name: Issues
+    description: Public bug-report submissions (admin triage routes ship in Sprint 4)
 
 paths:
   # ── General ───────────────────────────────────────────────────
@@ -1031,6 +1033,56 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
+  # ── Issues ────────────────────────────────────────────────────
+
+  /v1/issues:
+    post:
+      tags: [Issues]
+      summary: File a public bug report
+      description: |
+        Public submission route — anyone with the URL can file a bug report.
+        No authentication required. Returns a small confirmation payload on
+        success. The admin-gated read and triage routes ship in Sprint 4.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IssueInput' }
+            examples:
+              minimal:
+                summary: Required fields only
+                value:
+                  title: 'Search returns 500 on long titles'
+                  description: 'Calling /v1/movie/search?title=<300 chars> returns 500.'
+              full:
+                summary: With reproduction steps and reporter contact
+                value:
+                  title: 'Poster URLs are 404'
+                  description: 'Some movies return TMDB poster paths that 404.'
+                  reproSteps: 'GET /v1/movie/details/9999, click posterUrl'
+                  reporterEmail: 'qa@example.com'
+      responses:
+        '201':
+          description: Issue accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/IssueAck' }
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Validation failed
+        '500':
+          description: Failed to file issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
 # ── Schemas ───────────────────────────────────────────────────
 
 components:
@@ -1039,6 +1091,12 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: |
+        RS256 JWT issued by the shared **Auth²** service (issuer
+        `https://tcss-460-iam.onrender.com`). Tokens are verified against
+        the issuer's JWKS; the `aud` claim must equal this group's
+        audience name (`group-8-api`). Pass the access token as
+        `Authorization: Bearer <token>`. This API never mints tokens.
   schemas:
     MovieSummary:
       type: object
@@ -1101,6 +1159,36 @@ components:
           type: string
           description: Human-readable error message
           example: 'An unexpected error occurred'
+
+    IssueInput:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        reproSteps:
+          type: string
+          maxLength: 5000
+        reporterEmail:
+          type: string
+          format: email
+
+    IssueAck:
+      type: object
+      properties:
+        id: { type: integer, example: 42 }
+        title: { type: string, example: 'Search returns 500' }
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+          example: open
+        createdAt: { type: string, format: date-time }
 
     Review:
       type: object
