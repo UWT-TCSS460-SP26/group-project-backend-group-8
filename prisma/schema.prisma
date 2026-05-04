@@ -25,6 +25,14 @@ enum Role {
   OWNER       @map("owner")
 }
 
+/// Triage state for visitor-submitted bug reports.
+enum IssueStatus {
+  OPEN        @map("open")
+  IN_PROGRESS @map("in_progress")
+  RESOLVED    @map("resolved")
+  CLOSED      @map("closed")
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -39,6 +47,7 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
   ratings   Rating[]
   reviews   Review[]
+  issues    Issue[]
 
   @@unique([id, username])
   @@map("users")
@@ -81,4 +90,22 @@ model Review {
   @@unique([userId, mediaId, mediaType])
   @@index([mediaId, mediaType])
   @@map("reviews")
+}
+
+/// Public bug-report submissions. Anyone can file. Sprint 4 adds the
+/// admin-gated triage routes; the table exists now so its schema is stable.
+model Issue {
+  id             Int         @id @default(autoincrement())
+  title          String
+  description    String
+  reproSteps     String?     @map("repro_steps")
+  reporterEmail  String?     @map("reporter_email")
+  reporterUserId Int?        @map("reporter_user_id")
+  status         IssueStatus @default(OPEN)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  reporter       User?       @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("issues")
 }

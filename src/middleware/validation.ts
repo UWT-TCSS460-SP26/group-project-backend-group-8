@@ -39,6 +39,13 @@ export const GetReviewsQuerySchema = z.object({
 
 export const GetRatingsQuerySchema = z.object({ ...MediaQuery });
 
+export const PostIssueSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().min(1).max(5000),
+  reproSteps: z.string().trim().min(1).max(5000).optional(),
+  reporterEmail: z.string().trim().email().max(254).optional(),
+});
+
 const validate =
   (source: 'body' | 'params' | 'query', schema: z.ZodType): RequestHandler =>
   (request, response, next) => {
@@ -69,6 +76,7 @@ export const validatePostReviewBody = validate('body', PostReviewSchema);
 export const validateUpdateReviewBody = validate('body', UpdateReviewSchema);
 export const validateGetReviewsQuery = validate('query', GetReviewsQuerySchema);
 export const validateGetRatingsQuery = validate('query', GetRatingsQuerySchema);
+export const validatePostIssueBody = validate('body', PostIssueSchema);
 
 export type RatingBody = z.infer<typeof PostRatingSchema>;
 export type UpdateRatingBody = z.infer<typeof UpdateRatingSchema>;
@@ -76,6 +84,7 @@ export type PostReviewBody = z.infer<typeof PostReviewSchema>;
 export type UpdateReviewBody = z.infer<typeof UpdateReviewSchema>;
 export type GetReviewsQuery = z.infer<typeof GetReviewsQuerySchema>;
 export type GetRatingsQuery = z.infer<typeof GetRatingsQuerySchema>;
+export type PostIssueBody = z.infer<typeof PostIssueSchema>;
 
 /**
  * Validates that a required environment variable is set.
