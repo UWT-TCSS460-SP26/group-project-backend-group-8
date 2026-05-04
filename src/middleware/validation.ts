@@ -39,6 +39,16 @@ export const GetReviewsQuerySchema = z.object({
 
 export const GetRatingsQuerySchema = z.object({ ...MediaQuery });
 
+// Story 3 — media details combined query
+export const GetMediaQuerySchema = z.object({
+  type: z.enum(['movie', 'tv']),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(25),
+  sort: z.enum(['createdAt', 'id']).default('createdAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
+});
+
+// Story 2 — bug / issue report (Mansur's schema name kept)
 export const PostIssueSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().min(1).max(5000),
@@ -46,6 +56,7 @@ export const PostIssueSchema = z.object({
   reporterEmail: z.string().trim().email().max(254).optional(),
 });
 
+// validate must be declared before any validate(...) calls below
 const validate =
   (source: 'body' | 'params' | 'query', schema: z.ZodType): RequestHandler =>
   (request, response, next) => {
@@ -61,8 +72,6 @@ const validate =
       return;
     }
     if (source === 'query') {
-      // Express 5 made req.query a read-only getter — assignment silently
-      // fails. Hand the parsed value to the controller via res.locals.
       response.locals.query = result.data;
     } else {
       (request as unknown as Record<string, unknown>)[source] = result.data;
@@ -76,6 +85,7 @@ export const validatePostReviewBody = validate('body', PostReviewSchema);
 export const validateUpdateReviewBody = validate('body', UpdateReviewSchema);
 export const validateGetReviewsQuery = validate('query', GetReviewsQuerySchema);
 export const validateGetRatingsQuery = validate('query', GetRatingsQuerySchema);
+export const validateGetMediaQuery = validate('query', GetMediaQuerySchema);
 export const validatePostIssueBody = validate('body', PostIssueSchema);
 
 export type RatingBody = z.infer<typeof PostRatingSchema>;
@@ -84,12 +94,9 @@ export type PostReviewBody = z.infer<typeof PostReviewSchema>;
 export type UpdateReviewBody = z.infer<typeof UpdateReviewSchema>;
 export type GetReviewsQuery = z.infer<typeof GetReviewsQuerySchema>;
 export type GetRatingsQuery = z.infer<typeof GetRatingsQuerySchema>;
+export type GetMediaQuery = z.infer<typeof GetMediaQuerySchema>;
 export type PostIssueBody = z.infer<typeof PostIssueSchema>;
 
-/**
- * Validates that a required environment variable is set.
- * Returns a middleware function that checks for the given key in process.env.
- */
 export const requireEnvVar = (key: string) => {
   return (_request: Request, response: Response, next: NextFunction) => {
     if (!process.env[key]) {
@@ -100,9 +107,6 @@ export const requireEnvVar = (key: string) => {
   };
 };
 
-/**
- * Validates that 'title' is present as a query param.
- */
 export const requireTitle = (request: Request, response: Response, next: NextFunction) => {
   const title = request.query.title;
   if (!title) {
@@ -112,9 +116,6 @@ export const requireTitle = (request: Request, response: Response, next: NextFun
   next();
 };
 
-/**
- * Validates that the 'id' route parameter is a positive integer.
- */
 export const validateNumericId = (request: Request, response: Response, next: NextFunction) => {
   const id = Number(request.params.id) || Number(request.query.id);
   if (!Number.isInteger(id) || id <= 0) {
@@ -124,12 +125,8 @@ export const validateNumericId = (request: Request, response: Response, next: Ne
   next();
 };
 
-/**
- * Validates that the 'limit' route parameter is a positive integer.
- */
 export const validateNumericLimit = (request: Request, response: Response, next: NextFunction) => {
   const limitValue = request.params.limit || request.query.limit;
-
   if (limitValue !== undefined) {
     const limit = Number(limitValue);
     if (!Number.isInteger(limit) || limit <= 0) {
