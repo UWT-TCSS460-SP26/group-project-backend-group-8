@@ -12,6 +12,7 @@ module.exports = {
   setupFiles: ['<rootDir>/tests/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/middleware/requireAuth$': '<rootDir>/tests/__mocks__/requireAuth.ts',
     '^@scalar/express-api-reference$': '<rootDir>/tests/__mocks__/scalarMock.cjs',
   },
 };
