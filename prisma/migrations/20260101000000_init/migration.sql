@@ -1,5 +1,3 @@
-Loaded Prisma config from prisma.config.ts.
-
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
@@ -8,9 +6,6 @@ CREATE TYPE "MediaType" AS ENUM ('movie', 'tv');
 
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('user', 'moderator', 'admin', 'super_admin', 'owner');
-
--- CreateEnum
-CREATE TYPE "IssueStatus" AS ENUM ('open', 'in_progress', 'resolved', 'closed');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -55,21 +50,6 @@ CREATE TABLE "reviews" (
     CONSTRAINT "reviews_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "issues" (
-    "id" SERIAL NOT NULL,
-    "title" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "repro_steps" TEXT,
-    "reporter_email" TEXT,
-    "reporter_user_id" INTEGER,
-    "status" "IssueStatus" NOT NULL DEFAULT 'open',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "issues_pkey" PRIMARY KEY ("id")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "users_subject_id_key" ON "users"("subject_id");
 
@@ -94,15 +74,8 @@ CREATE INDEX "reviews_media_id_media_type_idx" ON "reviews"("media_id", "media_t
 -- CreateIndex
 CREATE UNIQUE INDEX "reviews_user_id_media_id_media_type_key" ON "reviews"("user_id", "media_id", "media_type");
 
--- CreateIndex
-CREATE INDEX "issues_status_idx" ON "issues"("status");
-
 -- AddForeignKey
 ALTER TABLE "ratings" ADD CONSTRAINT "ratings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_user_id_username_fkey" FOREIGN KEY ("user_id", "username") REFERENCES "users"("id", "username") ON DELETE SET DEFAULT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "issues" ADD CONSTRAINT "issues_reporter_user_id_fkey" FOREIGN KEY ("reporter_user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
