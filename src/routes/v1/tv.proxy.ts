@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { searchTvSeries, getTvSeriesDetails, getPopularTvSeries } from '@/controllers/tv.proxy';
+import {
+  searchTvSeries,
+  getTvSeriesDetails,
+  getTvSeriesEnrichedDetail,
+  getPopularTvSeries,
+} from '@/controllers/tv.proxy';
 import {
   requireTitle,
   validateNumericId,
@@ -14,6 +19,7 @@ tvSeriesRouter.use(requireEnvVar('TMDB_API_KEY'));
 
 tvSeriesRouter.get('/search', requireTitle, validateNumericLimit, searchTvSeries);
 tvSeriesRouter.get('/details/:id', validateNumericId, getTvSeriesDetails);
+tvSeriesRouter.get('/details/:id/enriched', validateNumericId, getTvSeriesEnrichedDetail);
 tvSeriesRouter.get('/popular', validateNumericLimit, getPopularTvSeries);
 
 export { tvSeriesRouter };

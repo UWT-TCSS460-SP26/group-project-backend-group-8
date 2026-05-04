@@ -65,17 +65,44 @@ const handleAuthError: ErrorRequestHandler = (error, _request, response, next) =
 };
 
 /**
+ * Test-only stub. When NODE_ENV=test, requireAuth is replaced with this
+ * middleware, which reads an `X-Test-User` header carrying a JSON-encoded
+ * `{ sub, role, email }` payload and attaches it to request.user as if a
+ * valid token had been verified. The real JWKS path is exercised end-to-end
+ * in deployment, not via the unit suite.
+ */
+const stubAuth: RequestHandler = (request, response, next) => {
+  const header = request.headers['x-test-user'];
+  if (typeof header !== 'string' || header.length === 0) {
+    response.status(401).json({ error: 'Invalid or missing token' });
+    return;
+  }
+  try {
+    const parsed = JSON.parse(header) as Partial<AuthenticatedUser>;
+    if (!parsed.sub) {
+      response.status(401).json({ error: 'Invalid or missing token' });
+      return;
+    }
+    request.user = {
+      sub: parsed.sub,
+      role: (parsed.role as Role) ?? 'User',
+      email: parsed.email,
+    };
+    next();
+  } catch {
+    response.status(401).json({ error: 'Invalid or missing token' });
+  }
+};
+
+/**
  * Verifies the Authorization: Bearer <token> header against the auth-squared
  * issuer's JWKS (RS256) and attaches the decoded payload to request.user.
  *
  * Replaces backend-2's HS256 + JWT_SECRET verification. Token issuance is
  * entirely owned by auth-squared; this API never mints tokens.
  */
-export const requireAuth: Array<RequestHandler | ErrorRequestHandler> = [
-  verifyJwt,
-  attachUser,
-  handleAuthError,
-];
+export const requireAuth: Array<RequestHandler | ErrorRequestHandler> =
+  process.env.NODE_ENV === 'test' ? [stubAuth] : [verifyJwt, attachUser, handleAuthError];
 
 /**
  * Exact-match role gate. Use after requireAuth:

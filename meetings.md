@@ -317,7 +317,7 @@ As a frontend developer, I want OpenAPI documentation and automated tests for ev
 
 5:00 pm - 6:30 pm
 
-Attending: Caleb, Christina, Charlene
+Attending: Caleb, Christina, Charlene, Mansur
 
 Meeting Manager: Christina Blackwell
 

@@ -25,6 +25,8 @@ tags:
     description: User-submitted reviews persisted via Prisma/Postgres
   - name: Ratings
     description: User-submitted scores and aggregate summaries
+  - name: Issues
+    description: Public bug-report submissions (admin triage routes ship in Sprint 4)
 
 paths:
   # ── General ───────────────────────────────────────────────────
@@ -137,6 +139,50 @@ paths:
                   summary: Service Unavailable
                   value:
                     error: Failed to reach service
+
+  /v1/movie/details/{id}/enriched:
+    get:
+      tags: [Movies]
+      summary: Enriched movie detail (TMDB + community)
+      description: |
+        Combined route returning the movie's TMDB metadata together with this
+        community's aggregate rating, review count, and the five most recent
+        reviews. Public — no authentication required. When the title has no
+        ratings, `averageScore` is null and counts are zero.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 550
+      responses:
+        '200':
+          description: Combined TMDB + community payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tmdb: { $ref: '#/components/schemas/MovieSummary' }
+                      community: { $ref: '#/components/schemas/CommunityAggregate' }
+        '400':
+          description: Invalid id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: TMDB has no record for this id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '502':
+          description: Failed to reach TMDB
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /v1/movie/details/{id}:
     get:
@@ -368,6 +414,49 @@ paths:
                   summary: Service Unavailable
                   value:
                     error: Failed to reach service
+
+  /v1/tv/details/{id}/enriched:
+    get:
+      tags: [TV Series]
+      summary: Enriched TV detail (TMDB + community)
+      description: |
+        Combined route returning the show's TMDB metadata together with this
+        community's aggregate rating, review count, and the five most recent
+        reviews. Public — no authentication required.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 1399
+      responses:
+        '200':
+          description: Combined TMDB + community payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tmdb: { $ref: '#/components/schemas/TvSeriesSummary' }
+                      community: { $ref: '#/components/schemas/CommunityAggregate' }
+        '400':
+          description: Invalid id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: TMDB has no record for this id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '502':
+          description: Failed to reach TMDB
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /v1/tv/details/{id}:
     get:
@@ -1031,6 +1120,54 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
+  # ── Issues ────────────────────────────────────────────────────
+
+  /v1/issues:
+    post:
+      tags: [Issues]
+      summary: File a public bug report
+      description: |
+        Public submission route — anyone with the URL can file a bug report.
+        No authentication required. The admin-gated read and triage routes
+        ship in Sprint 4.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IssueInput' }
+            examples:
+              minimal:
+                summary: Required fields only
+                value:
+                  title: 'Search returns 500 on long titles'
+                  description: 'Calling /v1/movie/search?title=<300 chars> returns 500.'
+              full:
+                summary: With reproduction steps and reporter contact
+                value:
+                  title: 'Poster URLs are 404'
+                  description: 'Some movies return TMDB poster paths that 404.'
+                  reproSteps: 'GET /v1/movie/details/9999, click posterUrl'
+                  reporterEmail: 'qa@example.com'
+      responses:
+        '201':
+          description: Issue accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/IssueAck' }
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Failed to file issue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
 # ── Schemas ───────────────────────────────────────────────────
 
 components:
@@ -1039,6 +1176,11 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: |
+        RS256 JWT issued by the shared **auth-squared** service. Tokens are
+        verified against the issuer's JWKS; the `aud` claim must equal this
+        group's audience name (`group-8-api`). Pass the access token as
+        `Authorization: Bearer <token>`. This API never mints tokens.
   schemas:
     MovieSummary:
       type: object
@@ -1101,6 +1243,57 @@ components:
           type: string
           description: Human-readable error message
           example: 'An unexpected error occurred'
+
+    CommunityAggregate:
+      type: object
+      description: |
+        Aggregate community data attached to enriched detail responses.
+        `averageScore` is null when no ratings exist (not 0, which would
+        misrepresent a 1–10 scale). `recentReviews` is at most 5 items.
+      properties:
+        averageScore:
+          type: number
+          nullable: true
+          example: 8.4
+        ratingCount:
+          type: integer
+          example: 27
+        reviewCount:
+          type: integer
+          example: 11
+        recentReviews:
+          type: array
+          items: { $ref: '#/components/schemas/Review' }
+
+    IssueInput:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        reproSteps:
+          type: string
+          maxLength: 5000
+        reporterEmail:
+          type: string
+          format: email
+
+    IssueAck:
+      type: object
+      properties:
+        id: { type: integer, example: 42 }
+        title: { type: string, example: 'Search returns 500' }
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+          example: open
+        createdAt: { type: string, format: date-time }
 
     Review:
       type: object
