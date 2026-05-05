@@ -39,9 +39,13 @@ export const setMockUser = (user: AuthenticatedUser | null): void => {
   _mockUser = user;
 };
 
-const mockAuthMiddleware: RequestHandler = (req: Request, _res: Response, next: NextFunction) => {
-  if (_mockUser) req.user = _mockUser;
-  next();
+const mockAuthMiddleware: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+  if (_mockUser) {
+    req.user = _mockUser;
+    next();
+  } else {
+    res.status(401).json({ error: 'Not authenticated' });
+  }
 };
 
 export const requireAuth: Array<RequestHandler | ErrorRequestHandler> = [mockAuthMiddleware];
