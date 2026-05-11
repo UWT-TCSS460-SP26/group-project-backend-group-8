@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
 import { MediaType } from '@/generated/prisma';
 import type { GetMediaQuery } from '@/middleware/validation';
+import { authorUserSelect, toAuthor, type AuthorUser } from '@/utils/author';
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 
@@ -66,6 +67,7 @@ export const getMediaDetails = async (
           title: true,
           body: true,
           createdAt: true,
+          user: { select: authorUserSelect },
         },
       }),
 
@@ -94,7 +96,10 @@ export const getMediaDetails = async (
         avgScore,
         totalRatings: ratingAgg._count.score,
         reviews: {
-          data: reviews,
+          data: reviews.map(({ user, ...rest }) => ({
+            ...rest,
+            author: toAuthor(user as AuthorUser | null),
+          })),
           page,
           limit,
           total: totalReviews,

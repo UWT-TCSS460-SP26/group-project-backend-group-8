@@ -2,10 +2,10 @@ import { Router } from 'express';
 import {
   getRatingsSummary,
   getRatingById,
+  getMyRatings,
   postRating,
   updateRating,
   deleteRating,
-  getMyRatings,
 } from '@/controllers/ratings';
 import {
   validateGetRatingsQuery,

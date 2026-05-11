@@ -33,6 +33,24 @@ describe('GET /openapi.json', () => {
   });
 });
 
+describe('CORS allowlist', () => {
+  it('echoes the access-control-allow-origin header for an allowed origin', async () => {
+    const response = await request(app)
+      .options('/health')
+      .set('Origin', 'http://localhost:3000')
+      .set('Access-Control-Request-Method', 'GET');
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+  });
+
+  it('omits the access-control-allow-origin header for a disallowed origin', async () => {
+    const response = await request(app)
+      .options('/health')
+      .set('Origin', 'http://evil.example.com')
+      .set('Access-Control-Request-Method', 'GET');
+    expect(response.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
+
 describe('404 handler', () => {
   // Sad path — route does not exist
   it('should return 404 with an error message for an unknown route', async () => {

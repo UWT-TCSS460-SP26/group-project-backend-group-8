@@ -50,7 +50,7 @@ describe('GET /v1/media/:id', () => {
         avgScore: 8.5,
         totalRatings: 10,
         reviews: {
-          data: [{ id: 1, title: 'Review 1' }],
+          data: [{ id: 1, title: 'Review 1', author: null }],
           page: 1,
           limit: 25,
           total: 1,

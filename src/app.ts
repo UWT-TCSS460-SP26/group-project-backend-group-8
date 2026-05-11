@@ -1,5 +1,5 @@
 import express, { ErrorRequestHandler, Request, Response } from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import fs from 'fs';
 import YAML from 'yaml';
 import { routes } from './routes';
@@ -7,8 +7,34 @@ import { apiReference } from '@scalar/express-api-reference';
 
 const app = express();
 
-// Application-level middleware
-app.use(cors());
+// CORS allowlist driven by the CORS_ALLOWED_ORIGINS env var (comma-separated).
+// Partner deploys their consumer app to a different origin in Sprint 6+;
+// adding it is a single env-var update, no code change. Local dev defaults
+// cover Vite (5173) and CRA/Next (3000). Requests with no Origin header
+// (curl, server-to-server) are always permitted so the deployed API stays
+// scriptable for testing.
+const allowedOrigins = (
+  process.env.CORS_ALLOWED_ORIGINS ?? 'http://localhost:3000,http://localhost:5173'
+)
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    // Disallowed origin: omit the Access-Control-Allow-Origin header rather
+    // than throwing. The browser blocks the request on its own; throwing
+    // would surface as a noisy 500 in server logs.
+    callback(null, false);
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // OpenAPI documentation
