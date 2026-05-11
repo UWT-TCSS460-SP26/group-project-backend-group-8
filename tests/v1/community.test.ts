@@ -18,7 +18,13 @@ jest.mock('@/prisma', () => ({
 const tmdbMovie = (id: number, title: string) => ({
   ok: true,
   status: 200,
-  json: async () => ({ id, title, overview: 'A synopsis', poster_path: '/img.jpg', release_date: '2000-01-01' }),
+  json: async () => ({
+    id,
+    title,
+    overview: 'A synopsis',
+    poster_path: '/img.jpg',
+    release_date: '2000-01-01',
+  }),
 });
 
 beforeEach(() => {
@@ -36,7 +42,17 @@ describe('GET /v1/community/top-rated', () => {
     ]);
     mockFetch
       .mockResolvedValueOnce(tmdbMovie(550, 'Fight Club'))
-      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 1396, name: 'Breaking Bad', overview: 'Meth', poster_path: '/bb.jpg', first_air_date: '2008-01-20' }) });
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: 1396,
+          name: 'Breaking Bad',
+          overview: 'Meth',
+          poster_path: '/bb.jpg',
+          first_air_date: '2008-01-20',
+        }),
+      });
 
     const response = await request(app).get('/v1/community/top-rated');
 
@@ -87,9 +103,7 @@ describe('GET /v1/community/top-rated', () => {
     const response = await request(app).get('/v1/community/top-rated').query({ limit: '5' });
 
     expect(response.status).toBe(200);
-    expect(mockPrismaGroupBy).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 5 })
-    );
+    expect(mockPrismaGroupBy).toHaveBeenCalledWith(expect.objectContaining({ take: 5 }));
   });
 
   it('handles database errors', async () => {
