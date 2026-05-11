@@ -112,25 +112,25 @@ Requires Node 22 (`engines.node` in package.json).
 
 ### Scripts
 
-| Command                | Description                       |
-| ---------------------- | --------------------------------- |
-| `npm run dev`          | Start dev server with auto-reload |
-| `npm run build`        | Compile TypeScript to `dist/`     |
-| `npm start`            | Run compiled output               |
-| `npm test`             | Run Jest test suite               |
-| `npm run lint`         | Run ESLint                        |
-| `npm run format`       | Format code with Prettier         |
-| `npm run prisma:migrate` | Run Prisma migrations           |
-| `npm run prisma:seed`  | Seed development data             |
-| `npm run prisma:studio` | Open Prisma Studio              |
+| Command                  | Description                       |
+| ------------------------ | --------------------------------- |
+| `npm run dev`            | Start dev server with auto-reload |
+| `npm run build`          | Compile TypeScript to `dist/`     |
+| `npm start`              | Run compiled output               |
+| `npm test`               | Run Jest test suite               |
+| `npm run lint`           | Run ESLint                        |
+| `npm run format`         | Format code with Prettier         |
+| `npm run prisma:migrate` | Run Prisma migrations             |
+| `npm run prisma:seed`    | Seed development data             |
+| `npm run prisma:studio`  | Open Prisma Studio                |
 
 ### Environment variables
 
-| Var                     | Purpose                                                  |
-| ----------------------- | -------------------------------------------------------- |
-| `PORT`                  | HTTP port (default 3000)                                 |
-| `DATABASE_URL`          | Postgres connection string (Supabase pooled)             |
-| `TMDB_API_KEY`          | TMDB v3 API key for the proxy routes                     |
-| `AUTH_ISSUER`           | Auth² issuer URL (`https://tcss-460-iam.onrender.com`)   |
-| `API_AUDIENCE`          | Expected `aud` claim — must be `group-8-api`             |
-| `CORS_ALLOWED_ORIGINS`  | Comma-separated allowlist of partner origins             |
+| Var                    | Purpose                                                |
+| ---------------------- | ------------------------------------------------------ |
+| `PORT`                 | HTTP port (default 3000)                               |
+| `DATABASE_URL`         | Postgres connection string (Supabase pooled)           |
+| `TMDB_API_KEY`         | TMDB v3 API key for the proxy routes                   |
+| `AUTH_ISSUER`          | Auth² issuer URL (`https://tcss-460-iam.onrender.com`) |
+| `API_AUDIENCE`         | Expected `aud` claim — must be `group-8-api`           |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowlist of partner origins           |

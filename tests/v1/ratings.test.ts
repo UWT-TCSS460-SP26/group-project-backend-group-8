@@ -3,6 +3,9 @@ import { app } from '../../src/app';
 import { setMockUser } from '../__mocks__/requireAuth';
 import { Prisma } from '@/generated/prisma/client';
 
+const mockFetch = jest.fn();
+global.fetch = mockFetch as unknown as typeof fetch;
+
 const mockPrismaAggregate = jest.fn();
 const mockPrismaFindUnique = jest.fn();
 const mockPrismaFindMany = jest.fn();
@@ -34,6 +37,7 @@ jest.mock('@/prisma', () => ({
 }));
 
 beforeEach(() => {
+  mockFetch.mockReset();
   mockPrismaAggregate.mockReset();
   mockPrismaFindUnique.mockReset();
   mockPrismaFindMany.mockReset();
@@ -50,6 +54,7 @@ beforeEach(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mockUserUpsert.mockImplementation((args: any) => Promise.resolve({ id: args.where.subjectId }));
   setMockUser(null);
+  process.env.TMDB_API_KEY = 'test-key';
 });
 
 describe('GET /v1/ratings', () => {
@@ -214,9 +219,51 @@ describe('DELETE /v1/ratings/:id', () => {
 });
 
 describe('GET /v1/ratings/me', () => {
-  it('returns 401 without auth', async () => {
+  const tmdbMovie = {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      id: 550,
+      title: 'Fight Club',
+      overview: 'A soap salesman...',
+      poster_path: '/abc.jpg',
+      release_date: '1999-10-15',
+    }),
+  };
+
+  it('requires auth', async () => {
     const response = await request(app).get('/v1/ratings/me');
     expect(response.status).toBe(401);
+  });
+
+  it('returns enriched ratings with TMDB metadata and author', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([
+      { id: 1, mediaId: 550, mediaType: 'movie', score: 8.5, user: null },
+    ]);
+    mockPrismaCount.mockResolvedValue(1);
+    mockFetch.mockResolvedValue(tmdbMovie);
+
+    const response = await request(app).get('/v1/ratings/me');
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].tmdb.title).toBe('Fight Club');
+    expect(response.body.data[0].author).toBeNull();
+    expect(response.body.pagination).toEqual({ page: 1, limit: 20, total: 1, totalPages: 1 });
+  });
+
+  it('returns tmdb: null when TMDB fetch fails for an item', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([
+      { id: 1, mediaId: 550, mediaType: 'movie', score: 8.5, user: null },
+    ]);
+    mockPrismaCount.mockResolvedValue(1);
+    mockFetch.mockResolvedValue({ ok: false, status: 404 });
+
+    const response = await request(app).get('/v1/ratings/me');
+    expect(response.status).toBe(200);
+    expect(response.body.data[0].tmdb).toBeNull();
+    expect(response.body.data[0].author).toBeNull();
   });
 
   it('returns caller-scoped ratings with author embedded', async () => {
@@ -224,32 +271,53 @@ describe('GET /v1/ratings/me', () => {
     mockPrismaFindMany.mockResolvedValue([
       {
         id: 3,
+        mediaId: 550,
+        mediaType: 'movie',
         score: 9,
         user: { id: 'u1', subjectId: 'u1', username: 'testuser', firstName: null, lastName: null },
       },
     ]);
     mockPrismaCount.mockResolvedValue(1);
+    // TMDB unavailable — tmdb: null in response
+    mockFetch.mockResolvedValue({ ok: false, status: 503 });
+
     const response = await request(app).get('/v1/ratings/me');
     expect(response.status).toBe(200);
-    expect(response.body.data).toEqual([
-      {
-        id: 3,
-        score: 9,
-        author: { id: 'u1', subjectId: 'u1', displayName: 'testuser' },
-      },
-    ]);
-    expect(mockPrismaFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: 'u1' } })
-    );
+    expect(response.body.data[0].author).toEqual({
+      id: 'u1',
+      subjectId: 'u1',
+      displayName: 'testuser',
+    });
+    expect(response.body.data[0].tmdb).toBeNull();
   });
 
   it('ignores client-supplied userId query param', async () => {
     setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
     mockPrismaFindMany.mockResolvedValue([]);
     mockPrismaCount.mockResolvedValue(0);
+
     await request(app).get('/v1/ratings/me').query({ userId: '999' });
     expect(mockPrismaFindMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: 'u1' } })
     );
+  });
+
+  it('handles database errors', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockRejectedValue(new Error('db error'));
+
+    const response = await request(app).get('/v1/ratings/me');
+    expect(response.status).toBe(500);
+  });
+
+  it('respects limit and page query params', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([]);
+    mockPrismaCount.mockResolvedValue(0);
+
+    const response = await request(app).get('/v1/ratings/me').query({ limit: '5', page: '2' });
+    expect(response.status).toBe(200);
+    expect(response.body.pagination.limit).toBe(5);
+    expect(response.body.pagination.page).toBe(2);
   });
 });

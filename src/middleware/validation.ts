@@ -58,6 +58,20 @@ export const GetMediaQuerySchema = z.object({
   order: z.enum(['asc', 'desc']).default('desc'),
 });
 
+// US3 — authenticated ratings history with TMDB enrichment
+export const GetMyRatingsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  sort: z.enum(['createdAt', 'score']).default('createdAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
+});
+
+// US4 — community top-rated discovery
+export const GetTopRatedQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  minCount: z.coerce.number().int().positive().default(3),
+});
+
 // Story 2 — bug / issue report (Mansur's schema name kept)
 export const PostIssueSchema = z.object({
   title: z.string().trim().min(1).max(200),
@@ -89,6 +103,8 @@ const validate =
     next();
   };
 
+export const validateGetMyRatingsQuery = validate('query', GetMyRatingsQuerySchema);
+export const validateGetTopRatedQuery = validate('query', GetTopRatedQuerySchema);
 export const validateRatingBody = validate('body', PostRatingSchema);
 export const validateUpdateRatingBody = validate('body', UpdateRatingSchema);
 export const validatePostReviewBody = validate('body', PostReviewSchema);
@@ -107,6 +123,8 @@ export type GetReviewsQuery = z.infer<typeof GetReviewsQuerySchema>;
 export type GetRatingsQuery = z.infer<typeof GetRatingsQuerySchema>;
 export type GetMyListQuery = z.infer<typeof GetMyListQuerySchema>;
 export type GetMediaQuery = z.infer<typeof GetMediaQuerySchema>;
+export type GetMyRatingsQuery = z.infer<typeof GetMyRatingsQuerySchema>;
+export type GetTopRatedQuery = z.infer<typeof GetTopRatedQuerySchema>;
 export type PostIssueBody = z.infer<typeof PostIssueSchema>;
 
 export const requireEnvVar = (key: string) => {

@@ -9,7 +9,7 @@ import {
 } from '@/controllers/ratings';
 import {
   validateGetRatingsQuery,
-  validateGetMyListQuery,
+  validateGetMyRatingsQuery,
   validateNumericId,
   validateRatingBody,
   validateUpdateRatingBody,
@@ -19,8 +19,8 @@ import { requireAuth } from '@/middleware/requireAuth';
 const ratingsRouter = Router();
 
 ratingsRouter.get('/', validateGetRatingsQuery, getRatingsSummary);
-// /me must precede /:id so the numeric-id validator doesn't reject "me" with 400.
-ratingsRouter.get('/me', requireAuth, validateGetMyListQuery, getMyRatings);
+// /me must be registered before /:id so Express doesn't treat "me" as an id segment
+ratingsRouter.get('/me', requireAuth, validateGetMyRatingsQuery, getMyRatings);
 ratingsRouter.get('/:id', validateNumericId, getRatingById);
 ratingsRouter.post('/', requireAuth, validateRatingBody, postRating);
 ratingsRouter.put('/:id', requireAuth, validateNumericId, validateUpdateRatingBody, updateRating);
