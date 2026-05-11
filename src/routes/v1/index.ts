@@ -5,6 +5,7 @@ import { ratingsRouter } from './ratings';
 import { reviewsRouter } from './reviews';
 import { issuesRouter } from './issues';
 import { mediaRouter } from './media';
+import { communityRouter } from './community';
 
 const v1Routes = Router();
 
@@ -14,5 +15,6 @@ v1Routes.use('/ratings', ratingsRouter);
 v1Routes.use('/reviews', reviewsRouter);
 v1Routes.use('/issues', issuesRouter);
 v1Routes.use('/media', mediaRouter);
+v1Routes.use('/community', communityRouter);
 
 export { v1Routes };

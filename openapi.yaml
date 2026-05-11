@@ -27,6 +27,8 @@ tags:
     description: User-submitted reviews persisted via Prisma/Postgres
   - name: Ratings
     description: User-submitted scores and aggregate summaries
+  - name: Community
+    description: Public discovery routes — top-rated content and user history
   - name: Issues
     description: Public bug-report submissions (admin triage routes ship in Sprint 4)
 
@@ -1118,6 +1120,127 @@ paths:
                 error: Media not found
         '500':
           description: TMDB or database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ── Community ─────────────────────────────────────────────────
+
+  /v1/ratings/me:
+    get:
+      tags: [Community]
+      summary: Authenticated user's rating history with TMDB metadata
+      description: |
+        Returns the calling user's complete rating history, each row enriched
+        with TMDB metadata fetched in parallel. Identified by the verified JWT
+        `sub` claim — no user ID in the URL.
+
+        If TMDB is unavailable for a particular item, that item's `tmdb` field
+        is `null` instead of failing the entire request.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { in: query, name: sort, schema: { type: string, enum: [createdAt, score], default: createdAt } }
+        - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
+      responses:
+        '200':
+          description: Paginated rating history enriched with TMDB metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 1 }
+                        mediaId: { type: integer, example: 550 }
+                        mediaType: { type: string, enum: [movie, tv], example: movie }
+                        score: { type: number, format: float, example: 8.5 }
+                        createdAt: { type: string, format: date-time }
+                        updatedAt: { type: string, format: date-time }
+                        tmdb:
+                          nullable: true
+                          type: object
+                          properties:
+                            id: { type: integer, example: 550 }
+                            title: { type: string, example: Fight Club }
+                            synopsis: { type: string }
+                            posterUrl: { type: string, format: uri }
+                            releaseDate: { type: string, format: date, nullable: true }
+                  pagination:
+                    type: object
+                    properties:
+                      page: { type: integer, example: 1 }
+                      limit: { type: integer, example: 20 }
+                      total: { type: integer, example: 5 }
+                      totalPages: { type: integer, example: 1 }
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Database or TMDB error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/community/top-rated:
+    get:
+      tags: [Community]
+      summary: Community top-rated movies and shows
+      description: |
+        Returns the highest-rated movies and shows by community average score,
+        filtered to titles that have at least `minCount` ratings (default 3) to
+        prevent single-vote outliers from dominating the list.
+
+        Each result is enriched with TMDB metadata. If TMDB is unavailable for
+        a particular item, that item's `tmdb` field is `null`.
+
+        **Caching:** results are cached in memory for 5 minutes per unique
+        `(limit, minCount)` combination. The response includes `cached: true`
+        and `cacheTtlSeconds: 300` when a cached result is served.
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - in: query
+          name: minCount
+          description: Minimum number of ratings a title must have to appear in the list
+          schema: { type: integer, minimum: 1, default: 3 }
+      responses:
+        '200':
+          description: Top-rated content enriched with TMDB metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        mediaId: { type: integer, example: 550 }
+                        mediaType: { type: string, enum: [movie, tv], example: movie }
+                        avgScore: { type: number, format: float, example: 8.7 }
+                        ratingCount: { type: integer, example: 42 }
+                        tmdb:
+                          nullable: true
+                          type: object
+                          properties:
+                            id: { type: integer, example: 550 }
+                            title: { type: string, example: Fight Club }
+                            synopsis: { type: string }
+                            posterUrl: { type: string, format: uri }
+                            releaseDate: { type: string, format: date, nullable: true }
+                  cached: { type: boolean, example: false }
+                  cacheTtlSeconds: { type: integer, example: 300 }
+        '500':
+          description: Database or TMDB error
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }

@@ -384,3 +384,68 @@ _Action items and next sync_
 - Charlene to confirm with the professor that the audience name `group-8-api` is the one registered with Auth² for our group, and update `.env.example` + Render env vars accordingly.
 - Story 6 owner (Caleb) to wire the CORS allowlist env var and run `prisma migrate deploy` against the Render Postgres once story 2's migration lands.
 - Next sync: Friday 5/1 at 2:30 pm (regular Friday slot) for mid-sprint progress check.
+
+# Sprint-4 Meeting
+
+4/27/2026
+
+5:00 pm - 6:30 pm
+
+Attending: All
+
+Meeting Manager: Mansur Yassin
+
+Meeting Scribe: Caleb Ernst
+
+## Agenda Item 1:
+
+We discussed how we are going to deal with the ransomware attack and moving forward with the other aspects of the class like what to do about the quiz.
+
+## Agenda Item 2:
+
+_Sprint-4 story assignments_
+
+**User Story 1 — Charlene**
+
+As an admin, I want to see every bug report filed against our API so that I can spot patterns, prioritize fixes, and answer "did anyone already report this?" without going through Slack.
+
+- Not yet assigned to a specific implementer.
+- Should be admin-only.
+- Most important bugs should surface at the top.
+- Sort also by when the ticket was created.
+- Completed tickets should not disappear from the UI but remain in the system.
+
+**User Story 2 — Charlene**
+
+Status for claimed, completed, or not used.
+
+**User Story 3 — Caleb**
+
+As a user, I want to see every movie and show I've rated alongside its TMDB metadata so that I can browse my own taste history.
+
+- Default to 20 items per page, matching TMDB pagination defaults.
+- Requires a new combined route that pings the TMDB API and our database and returns a single joined JSON response.
+
+**User Story 4 — Caleb**
+
+As a visitor, I want to see what your community is rating highest right now so that I can find something worth watching without knowing what to search for.
+
+- Results will be cached to reduce TMDB API costs and improve response times under higher load.
+
+**User Story 5 — Mansur**
+
+As a user, I want to see my own reviews and ratings, and as a visitor I want every review and rating to show who wrote it, so that the review feed reads like a community and not an anonymous dump.
+
+- Straightforward story; can be implemented with AI assistance.
+
+**User Story 6 — Mansur**
+
+As a frontend developer (your downstream partner), I want a complete, accurate OpenAPI spec so that I can build my consumer app against your contract without reading your source.
+
+- Relatively simple update.
+
+**User Story 7 — Christina**
+
+As a frontend developer (your downstream partner), I want a partner-facing README and a CORS configuration that lets my app call your API so that I can integrate against your deployed API on day one.
+
+- Planning to deploy the frontend on Vercel.

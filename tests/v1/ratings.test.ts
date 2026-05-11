@@ -3,8 +3,13 @@ import { app } from '../../src/app';
 import { setMockUser } from '../__mocks__/requireAuth';
 import { Prisma } from '@/generated/prisma/client';
 
+const mockFetch = jest.fn();
+global.fetch = mockFetch as unknown as typeof fetch;
+
 const mockPrismaAggregate = jest.fn();
 const mockPrismaFindUnique = jest.fn();
+const mockPrismaFindMany = jest.fn();
+const mockPrismaCount = jest.fn();
 const mockPrismaCreate = jest.fn();
 const mockPrismaUpdate = jest.fn();
 const mockPrismaDelete = jest.fn();
@@ -17,6 +22,8 @@ jest.mock('@/prisma', () => ({
     rating: {
       aggregate: (...args: unknown[]) => mockPrismaAggregate(...args),
       findUnique: (...args: unknown[]) => mockPrismaFindUnique(...args),
+      findMany: (...args: unknown[]) => mockPrismaFindMany(...args),
+      count: (...args: unknown[]) => mockPrismaCount(...args),
       create: (...args: unknown[]) => mockPrismaCreate(...args),
       update: (...args: unknown[]) => mockPrismaUpdate(...args),
       delete: (...args: unknown[]) => mockPrismaDelete(...args),
@@ -30,8 +37,11 @@ jest.mock('@/prisma', () => ({
 }));
 
 beforeEach(() => {
+  mockFetch.mockReset();
   mockPrismaAggregate.mockReset();
   mockPrismaFindUnique.mockReset();
+  mockPrismaFindMany.mockReset();
+  mockPrismaCount.mockReset();
   mockPrismaCreate.mockReset();
   mockPrismaUpdate.mockReset();
   mockPrismaDelete.mockReset();
@@ -204,5 +214,57 @@ describe('DELETE /v1/ratings/:id', () => {
     mockPrismaFindUnique.mockRejectedValue(new Error('error'));
     const response = await request(app).delete('/v1/ratings/1');
     expect(response.status).toBe(500);
+  });
+});
+
+describe('GET /v1/ratings/me', () => {
+  const tmdbMovie = { ok: true, status: 200, json: async () => ({ id: 550, title: 'Fight Club', overview: 'A soap salesman...', poster_path: '/abc.jpg', release_date: '1999-10-15' }) };
+
+  it('requires auth', async () => {
+    const response = await request(app).get('/v1/ratings/me');
+    expect(response.status).toBe(401);
+  });
+
+  it('returns enriched ratings with TMDB metadata', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([{ id: 1, mediaId: 550, mediaType: 'movie', score: 8.5 }]);
+    mockPrismaCount.mockResolvedValue(1);
+    mockFetch.mockResolvedValue(tmdbMovie);
+
+    const response = await request(app).get('/v1/ratings/me');
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].tmdb.title).toBe('Fight Club');
+    expect(response.body.pagination).toEqual({ page: 1, limit: 20, total: 1, totalPages: 1 });
+  });
+
+  it('returns tmdb: null when TMDB fetch fails for an item', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([{ id: 1, mediaId: 550, mediaType: 'movie', score: 8.5 }]);
+    mockPrismaCount.mockResolvedValue(1);
+    mockFetch.mockResolvedValue({ ok: false, status: 404 });
+
+    const response = await request(app).get('/v1/ratings/me');
+    expect(response.status).toBe(200);
+    expect(response.body.data[0].tmdb).toBeNull();
+  });
+
+  it('handles database errors', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockRejectedValue(new Error('db error'));
+
+    const response = await request(app).get('/v1/ratings/me');
+    expect(response.status).toBe(500);
+  });
+
+  it('respects limit and page query params', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([]);
+    mockPrismaCount.mockResolvedValue(0);
+
+    const response = await request(app).get('/v1/ratings/me').query({ limit: '5', page: '2' });
+    expect(response.status).toBe(200);
+    expect(response.body.pagination.limit).toBe(5);
+    expect(response.body.pagination.page).toBe(2);
   });
 });

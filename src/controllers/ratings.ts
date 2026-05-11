@@ -1,8 +1,52 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
 import { Prisma } from '@/generated/prisma/client';
-import { GetRatingsQuery } from '@/middleware/validation';
+import { GetRatingsQuery, GetMyRatingsQuery } from '@/middleware/validation';
 import { resolveLocalUser } from '@/auth/resolveLocalUser';
+import { fetchTmdbItemDetails } from '@/utils/tmdb';
+
+/**
+ * Auth required — the calling user's full rating history, each row enriched
+ * with TMDB metadata fetched in parallel. If TMDB is unavailable for an
+ * individual item, that item's `tmdb` field is null rather than failing the
+ * whole request.
+ */
+export const getMyRatings = async (request: Request, response: Response) => {
+  const { page, limit, sort, order } = response.locals.query as GetMyRatingsQuery;
+
+  try {
+    const user = await resolveLocalUser(request);
+
+    const [ratings, total] = await Promise.all([
+      prisma.rating.findMany({
+        where: { userId: user.id },
+        orderBy: { [sort]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.rating.count({ where: { userId: user.id } }),
+    ]);
+
+    const enriched = await Promise.all(
+      ratings.map(async (rating) => {
+        const tmdb = await fetchTmdbItemDetails(rating.mediaId, rating.mediaType as 'movie' | 'tv');
+        return { ...rating, tmdb };
+      })
+    );
+
+    response.status(200).json({
+      data: enriched,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (_error) {
+    response.status(500).json({ error: 'Failed to retrieve ratings history' });
+  }
+};
 
 /**
  * Public — aggregate rating summary for a TMDB title.
