@@ -25,8 +25,9 @@ export const fetchTmdbItemDetails = async (
       title: ((mediaType === 'movie' ? data.title : data.name) ?? '') as string,
       synopsis: (data.overview ?? '') as string,
       posterUrl: `${IMAGE_BASE}${data.poster_path ?? ''}`,
-      releaseDate: ((mediaType === 'movie' ? data.release_date : data.first_air_date) ??
-        null) as string | null,
+      releaseDate: ((mediaType === 'movie' ? data.release_date : data.first_air_date) ?? null) as
+        | string
+        | null,
     };
   } catch {
     return null;

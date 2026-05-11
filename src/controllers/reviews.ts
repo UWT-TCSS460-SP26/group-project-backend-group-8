@@ -1,11 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
 import { Prisma } from '@/generated/prisma/client';
-import {
-  PostReviewBody,
-  GetReviewsQuery,
-  GetMyListQuery,
-} from '@/middleware/validation';
+import { PostReviewBody, GetReviewsQuery, GetMyListQuery } from '@/middleware/validation';
 import { resolveLocalUser } from '@/auth/resolveLocalUser';
 import { hasRoleAtLeast } from '@/middleware/requireAuth';
 import { authorUserSelect, toAuthor, type AuthorUser } from '@/utils/author';
