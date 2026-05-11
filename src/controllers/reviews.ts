@@ -1,9 +1,34 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
 import { Prisma } from '@/generated/prisma/client';
-import { PostReviewBody, GetReviewsQuery } from '@/middleware/validation';
+import {
+  PostReviewBody,
+  GetReviewsQuery,
+  GetMyListQuery,
+} from '@/middleware/validation';
 import { resolveLocalUser } from '@/auth/resolveLocalUser';
 import { hasRoleAtLeast } from '@/middleware/requireAuth';
+import { authorUserSelect, toAuthor, type AuthorUser } from '@/utils/author';
+
+type ReviewWithUser = {
+  id: number;
+  userId: number | null;
+  username: string;
+  mediaId: number;
+  mediaType: string;
+  title: string | null;
+  body: string;
+  createdAt: Date;
+  updatedAt: Date;
+  user?: AuthorUser | null;
+};
+
+const withAuthor = (review: ReviewWithUser) => {
+  const { user, ...rest } = review;
+  return { ...rest, author: toAuthor(user) };
+};
+
+const reviewInclude = { user: { select: authorUserSelect } } as const;
 
 /**
  * Public — list reviews for a TMDB title with pagination and sorting.
@@ -21,12 +46,13 @@ export const getReviews = async (_request: Request, response: Response) => {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { [sort]: order },
+        include: reviewInclude,
       }),
       prisma.review.count({ where }),
     ]);
 
     response.status(200).json({
-      data: reviews,
+      data: reviews.map((r) => withAuthor(r as ReviewWithUser)),
       pagination: {
         page,
         limit,
@@ -49,6 +75,7 @@ export const getReviewById = async (request: Request, response: Response) => {
   try {
     const review = await prisma.review.findUnique({
       where: { id },
+      include: reviewInclude,
     });
 
     if (!review) {
@@ -56,20 +83,49 @@ export const getReviewById = async (request: Request, response: Response) => {
       return;
     }
 
-    response.status(200).json({ data: review });
+    response.status(200).json({ data: withAuthor(review as ReviewWithUser) });
   } catch (_error) {
     response.status(500).json({ error: 'Failed to retrieve review' });
   }
 };
 
 /**
- * POST /v1/reviews
- * Auth required. Creates a review for a movie or TV show.
- * A user may post multiple reviews for the same title (no unique constraint on reviews).
- * If the userId from the JWT refers to a user that doesn't exist in the database (e.g. the
- * account was deleted after the token was issued), Prisma will throw a foreign key constraint
- * error.
+ * GET /v1/reviews/me
+ * Story 5 — authenticated user lists their own reviews. Caller identity is
+ * the JWT `sub` claim; any client-supplied userId is ignored.
  */
+export const getMyReviews = async (request: Request, response: Response) => {
+  const { page, limit, sort, order } = response.locals.query as GetMyListQuery;
+
+  try {
+    const user = await resolveLocalUser(request);
+    const where = { userId: user.id };
+
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { [sort]: order },
+        include: reviewInclude,
+      }),
+      prisma.review.count({ where }),
+    ]);
+
+    response.status(200).json({
+      data: reviews.map((r) => withAuthor(r as ReviewWithUser)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (_error) {
+    response.status(500).json({ error: 'Failed to retrieve reviews' });
+  }
+};
+
 export const createReview = async (request: Request, response: Response) => {
   const { mediaId, mediaType, title, body } = request.body as PostReviewBody;
   const user = await resolveLocalUser(request);
@@ -86,9 +142,10 @@ export const createReview = async (request: Request, response: Response) => {
         title,
         body,
       },
+      include: reviewInclude,
     });
 
-    response.status(201).json({ data: review });
+    response.status(201).json({ data: withAuthor(review as ReviewWithUser) });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2003') {
@@ -132,9 +189,10 @@ export const updateReview = async (request: Request, response: Response) => {
     const updatedReview = await prisma.review.update({
       where: { id },
       data,
+      include: reviewInclude,
     });
 
-    response.status(200).json({ data: updatedReview });
+    response.status(200).json({ data: withAuthor(updatedReview as ReviewWithUser) });
   } catch (_error) {
     response.status(500).json({ error: 'Failed to update review' });
   }

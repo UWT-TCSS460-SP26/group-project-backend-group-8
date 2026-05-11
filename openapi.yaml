@@ -629,6 +629,39 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
+  /v1/reviews/me:
+    get:
+      tags: [Reviews]
+      summary: List the authenticated caller's reviews
+      description: |
+        Returns reviews authored by the caller, identified by the JWT `sub`
+        claim. Any client-supplied `userId` query parameter is ignored —
+        identity is taken only from the verified token.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - {
+            in: query,
+            name: limit,
+            schema: { type: integer, minimum: 1, maximum: 100, default: 25 },
+          }
+        - {
+            in: query,
+            name: sort,
+            schema: { type: string, enum: [createdAt, id], default: createdAt },
+          }
+        - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
+      responses:
+        '200':
+          description: Paginated list of the caller's reviews
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedReviews' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
   /v1/reviews/{id}:
     get:
       tags: [Reviews]
@@ -886,6 +919,38 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/ratings/me:
+    get:
+      tags: [Ratings]
+      summary: List the authenticated caller's ratings
+      description: |
+        Returns ratings submitted by the caller, identified by the JWT `sub`
+        claim. Any client-supplied `userId` query parameter is ignored.
+      security:
+        - bearerAuth: []
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - {
+            in: query,
+            name: limit,
+            schema: { type: integer, minimum: 1, maximum: 100, default: 25 },
+          }
+        - {
+            in: query,
+            name: sort,
+            schema: { type: string, enum: [createdAt, id], default: createdAt },
+          }
+        - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
+      responses:
+        '200':
+          description: Paginated list of the caller's ratings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedRatings' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /v1/ratings/{id}:
     get:
@@ -1279,6 +1344,21 @@ components:
           example: open
         createdAt: { type: string, format: date-time }
 
+    Author:
+      type: object
+      nullable: true
+      description: |
+        Stable identity attached to every review and rating response so a
+        partner front-end can render a feed without a separate /users/:id
+        round trip. `subjectId` is the Auth² `sub` claim; `id` is the local
+        User row primary key; `displayName` falls back to "first last" then
+        "Unknown User" when no username is set.
+      required: [id, subjectId, displayName]
+      properties:
+        id: { type: integer, example: 42 }
+        subjectId: { type: string, example: 'auth2|abc123' }
+        displayName: { type: string, example: 'alice' }
+
     Review:
       type: object
       description: A user-submitted review of a movie or TV series
@@ -1292,6 +1372,7 @@ components:
         body: { type: string, example: 'A modern classic' }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+        author: { $ref: '#/components/schemas/Author' }
 
     PaginatedReviews:
       type: object
@@ -1337,3 +1418,50 @@ components:
           example: 8.5
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+        author: { $ref: '#/components/schemas/Author' }
+
+    PaginatedRatings:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Rating' }
+        pagination:
+          type: object
+          properties:
+            page: { type: integer, example: 1 }
+            limit: { type: integer, example: 25 }
+            total: { type: integer, example: 12 }
+            totalPages: { type: integer, example: 1 }
+
+  responses:
+    BadRequest:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: 'Validation failed' }
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: 'Invalid or missing token' }
+    Forbidden:
+      description: Authenticated, but caller is not permitted
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: 'Forbidden' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: 'Not found' }
+    InternalError:
+      description: Server-side failure
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: 'Internal server error' }
