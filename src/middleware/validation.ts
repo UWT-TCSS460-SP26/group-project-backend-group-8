@@ -39,6 +39,16 @@ export const GetReviewsQuerySchema = z.object({
 
 export const GetRatingsQuerySchema = z.object({ ...MediaQuery });
 
+// Story 5 — self-list pagination for /v1/reviews/me and /v1/ratings/me.
+// Same shape as the public list, minus the mediaId/mediaType filter, since
+// the caller's identity is the only filter that applies.
+export const GetMyListQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(25),
+  sort: z.enum(['createdAt', 'id']).default('createdAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
+});
+
 // Story 3 — media details combined query
 export const GetMediaQuerySchema = z.object({
   type: z.enum(['movie', 'tv']),
@@ -85,6 +95,7 @@ export const validatePostReviewBody = validate('body', PostReviewSchema);
 export const validateUpdateReviewBody = validate('body', UpdateReviewSchema);
 export const validateGetReviewsQuery = validate('query', GetReviewsQuerySchema);
 export const validateGetRatingsQuery = validate('query', GetRatingsQuerySchema);
+export const validateGetMyListQuery = validate('query', GetMyListQuerySchema);
 export const validateGetMediaQuery = validate('query', GetMediaQuerySchema);
 export const validatePostIssueBody = validate('body', PostIssueSchema);
 
@@ -94,6 +105,7 @@ export type PostReviewBody = z.infer<typeof PostReviewSchema>;
 export type UpdateReviewBody = z.infer<typeof UpdateReviewSchema>;
 export type GetReviewsQuery = z.infer<typeof GetReviewsQuerySchema>;
 export type GetRatingsQuery = z.infer<typeof GetRatingsQuerySchema>;
+export type GetMyListQuery = z.infer<typeof GetMyListQuerySchema>;
 export type GetMediaQuery = z.infer<typeof GetMediaQuerySchema>;
 export type PostIssueBody = z.infer<typeof PostIssueSchema>;
 

@@ -64,7 +64,7 @@ describe('GET /v1/reviews', () => {
       .get('/v1/reviews')
       .query({ mediaId: '123', mediaType: 'movie' });
     expect(response.status).toBe(200);
-    expect(response.body.data).toEqual([{ id: 1, title: 'Good' }]);
+    expect(response.body.data).toEqual([{ id: 1, title: 'Good', author: null }]);
     expect(response.body.pagination).toEqual({ page: 1, limit: 25, total: 1, totalPages: 1 });
   });
 
@@ -82,7 +82,7 @@ describe('GET /v1/reviews/:id', () => {
     mockPrismaFindUnique.mockResolvedValue({ id: 1, title: 'Good' });
     const response = await request(app).get('/v1/reviews/1');
     expect(response.status).toBe(200);
-    expect(response.body.data).toEqual({ id: 1, title: 'Good' });
+    expect(response.body.data).toEqual({ id: 1, title: 'Good', author: null });
   });
 
   it('returns 404 if not found', async () => {
@@ -113,7 +113,7 @@ describe('POST /v1/reviews', () => {
       .post('/v1/reviews')
       .send({ title: 'A', body: 'B', mediaId: 1, mediaType: 'movie' });
     expect(response.status).toBe(201);
-    expect(response.body.data).toEqual({ id: 1, title: 'A' });
+    expect(response.body.data).toEqual({ id: 1, title: 'A', author: null });
   });
 
   it('returns 404 for P2003 error (user not found)', async () => {
@@ -155,7 +155,7 @@ describe('PUT /v1/reviews/:id', () => {
     mockPrismaUpdate.mockResolvedValue({ id: 1, title: 'New' });
     const response = await request(app).put('/v1/reviews/1').send({ title: 'New', body: 'B' });
     expect(response.status).toBe(200);
-    expect(response.body.data).toEqual({ id: 1, title: 'New' });
+    expect(response.body.data).toEqual({ id: 1, title: 'New', author: null });
   });
 
   it('returns 403 if not owner', async () => {
@@ -216,5 +216,47 @@ describe('DELETE /v1/reviews/:id', () => {
     mockPrismaFindUnique.mockRejectedValue(new Error('error'));
     const response = await request(app).delete('/v1/reviews/1');
     expect(response.status).toBe(500);
+  });
+});
+
+describe('GET /v1/reviews/me', () => {
+  it('returns 401 without auth', async () => {
+    const response = await request(app).get('/v1/reviews/me');
+    expect(response.status).toBe(401);
+  });
+
+  it('returns caller-scoped reviews with author embedded', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([
+      {
+        id: 7,
+        title: 'mine',
+        user: { id: 'u1', subjectId: 'u1', username: 'testuser', firstName: null, lastName: null },
+      },
+    ]);
+    mockPrismaCount.mockResolvedValue(1);
+    const response = await request(app).get('/v1/reviews/me');
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual([
+      {
+        id: 7,
+        title: 'mine',
+        author: { id: 'u1', subjectId: 'u1', displayName: 'testuser' },
+      },
+    ]);
+    // Confirm Prisma was scoped to the resolved local user id, not anything client-supplied.
+    expect(mockPrismaFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'u1' } })
+    );
+  });
+
+  it('ignores client-supplied userId query param', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([]);
+    mockPrismaCount.mockResolvedValue(0);
+    await request(app).get('/v1/reviews/me').query({ userId: '999' });
+    expect(mockPrismaFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'u1' } })
+    );
   });
 });
