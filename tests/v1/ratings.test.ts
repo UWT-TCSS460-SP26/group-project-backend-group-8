@@ -54,6 +54,7 @@ beforeEach(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mockUserUpsert.mockImplementation((args: any) => Promise.resolve({ id: args.where.subjectId }));
   setMockUser(null);
+  process.env.TMDB_API_KEY = 'test-key';
 });
 
 describe('GET /v1/ratings', () => {
