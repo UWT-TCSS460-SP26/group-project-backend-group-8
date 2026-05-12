@@ -214,7 +214,6 @@ export const updateReview = async (request: Request, response: Response) => {
 export const deleteReview = async (request: Request, response: Response) => {
   const id = Number(request.params.id);
   const user = await resolveLocalUser(request);
-  const userId = user.id;
 
   try {
     const review = await prisma.review.findUnique({
@@ -226,8 +225,8 @@ export const deleteReview = async (request: Request, response: Response) => {
       return response.status(404).json({ error: 'Review not found' });
     }
 
-    const isAdmin = hasRoleAtLeast(request.user?.role, 'Admin');
-    const isOwner = review.userId === userId;
+    const isAdmin = hasRoleAtLeast(user.role, 'ADMIN');
+    const isOwner = review.userId === user.id;
 
     if (!isAdmin && !isOwner) {
       return response.status(403).json({ error: 'Forbidden' });

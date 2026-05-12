@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction, RequestHandler, ErrorRequestHandler } from 'express';
 import { expressjwt, type Request as JwtRequest } from 'express-jwt';
 import jwksRsa from 'jwks-rsa';
+import { resolveLocalUser } from '@/auth/resolveLocalUser';
+import type { Role } from '@/generated/prisma/client';
 
-export const ROLE_HIERARCHY = ['User', 'Moderator', 'Admin', 'SuperAdmin', 'Owner'] as const;
-export type Role = (typeof ROLE_HIERARCHY)[number];
+export const ROLE_HIERARCHY = ['USER', 'MODERATOR', 'ADMIN', 'SUPER_ADMIN', 'OWNER'] as const;
 
 export interface AuthenticatedUser {
   sub: string;
@@ -83,16 +84,21 @@ export const requireAuth: Array<RequestHandler | ErrorRequestHandler> = [
  *   router.delete('/messages/:id', requireAuth, requireRole('Admin'), handler);
  */
 export const requireRole = (role: Role): RequestHandler => {
-  return (request: Request, response: Response, next: NextFunction): void => {
+  return async (request: Request, response: Response, next: NextFunction): Promise<void> => {
     if (!request.user) {
       response.status(401).json({ error: 'Not authenticated' });
       return;
     }
-    if (request.user.role !== role) {
-      response.status(403).json({ error: 'Insufficient permissions' });
-      return;
+    try {
+      const localUser = await resolveLocalUser(request);
+      if (localUser.role !== role) {
+        response.status(403).json({ error: 'Insufficient permissions' });
+        return;
+      }
+      next();
+    } catch (error) {
+      next(error);
     }
-    next();
   };
 };
 
@@ -100,21 +106,26 @@ export const requireRole = (role: Role): RequestHandler => {
  * Minimum-role gate using the 5-tier auth-squared hierarchy:
  * User < Moderator < Admin < SuperAdmin < Owner
  *
- *   router.delete('/messages/:id', requireAuth, requireRoleAtLeast('Admin'), handler);
+ *   router.delete('/messages/:id', requireAuth, requireRoleAtLeast('ADMIN'), handler);
  */
 export const requireRoleAtLeast = (minRole: Role): RequestHandler => {
   const minIdx = ROLE_HIERARCHY.indexOf(minRole);
-  return (request: Request, response: Response, next: NextFunction): void => {
+  return async (request: Request, response: Response, next: NextFunction): Promise<void> => {
     if (!request.user) {
       response.status(401).json({ error: 'Not authenticated' });
       return;
     }
-    const userIdx = ROLE_HIERARCHY.indexOf(request.user.role);
-    if (userIdx < 0 || userIdx < minIdx) {
-      response.status(403).json({ error: 'Insufficient permissions' });
-      return;
+    try {
+      const localUser = await resolveLocalUser(request);
+      const userIdx = ROLE_HIERARCHY.indexOf(localUser.role);
+      if (userIdx < 0 || userIdx < minIdx) {
+        response.status(403).json({ error: 'Insufficient permissions' });
+        return;
+      }
+      next();
+    } catch (error) {
+      next(error);
     }
-    next();
   };
 };
 

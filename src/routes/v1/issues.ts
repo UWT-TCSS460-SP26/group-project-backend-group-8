@@ -14,14 +14,14 @@ const issuesRouter = Router();
 issuesRouter.post('/', validatePostIssueBody, createIssue);
 
 // Admin-gated — role at least Admin required for all triage routes
-issuesRouter.get('/', requireAuth, requireRoleAtLeast('Admin'), validateGetIssuesQuery, listIssues);
+issuesRouter.get('/', requireAuth, requireRoleAtLeast('ADMIN'), validateGetIssuesQuery, listIssues);
 
-issuesRouter.get('/:id', requireAuth, requireRoleAtLeast('Admin'), validateNumericId, getIssue);
+issuesRouter.get('/:id', requireAuth, requireRoleAtLeast('ADMIN'), validateNumericId, getIssue);
 
 issuesRouter.patch(
   '/:id',
   requireAuth,
-  requireRoleAtLeast('Admin'),
+  requireRoleAtLeast('ADMIN'),
   validateNumericId,
   validatePatchIssueBody,
   patchIssue
@@ -30,7 +30,7 @@ issuesRouter.patch(
 issuesRouter.delete(
   '/:id',
   requireAuth,
-  requireRoleAtLeast('Admin'),
+  requireRoleAtLeast('ADMIN'),
   validateNumericId,
   deleteIssue
 );

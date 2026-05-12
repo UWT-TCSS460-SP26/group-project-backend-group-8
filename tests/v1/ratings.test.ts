@@ -49,10 +49,12 @@ beforeEach(() => {
   mockUserFindUnique.mockReset();
   mockUserUpdate.mockReset();
 
-  mockUserFindUnique.mockResolvedValue({ id: 'u1', email: 'test@test.com' });
-  mockUserUpdate.mockResolvedValue({ id: 'u1', email: 'test@test.com' });
+  mockUserFindUnique.mockResolvedValue({ id: 'u1', email: 'test@test.com', role: 'USER' });
+  mockUserUpdate.mockResolvedValue({ id: 'u1', email: 'test@test.com', role: 'USER' });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mockUserUpsert.mockImplementation((args: any) => Promise.resolve({ id: args.where.subjectId }));
+  mockUserUpsert.mockImplementation((args: any) =>
+    Promise.resolve({ id: args.where.subjectId, role: 'USER' })
+  );
   setMockUser(null);
   process.env.TMDB_API_KEY = 'test-key';
 });
@@ -114,7 +116,7 @@ describe('POST /v1/ratings', () => {
   });
 
   it('creates rating', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaCreate.mockResolvedValue({ id: 1, score: 8 });
     const response = await request(app)
       .post('/v1/ratings')
@@ -124,7 +126,7 @@ describe('POST /v1/ratings', () => {
   });
 
   it('returns 400 for P2003 error (user not found)', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaCreate.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('', { code: 'P2003', clientVersion: '1' })
     );
@@ -135,7 +137,7 @@ describe('POST /v1/ratings', () => {
   });
 
   it('returns 409 for P2002 error (already rated)', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaCreate.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('', { code: 'P2002', clientVersion: '1' })
     );
@@ -146,7 +148,7 @@ describe('POST /v1/ratings', () => {
   });
 
   it('handles other server errors', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaCreate.mockRejectedValue(new Error('error'));
     const response = await request(app)
       .post('/v1/ratings')
@@ -157,7 +159,7 @@ describe('POST /v1/ratings', () => {
 
 describe('PUT /v1/ratings/:id', () => {
   it('updates rating if owner', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindUnique.mockResolvedValue({ id: 1, userId: 'u1' });
     mockPrismaUpdate.mockResolvedValue({ id: 1, score: 9 });
     const response = await request(app).put('/v1/ratings/1').send({ score: 9 });
@@ -166,21 +168,21 @@ describe('PUT /v1/ratings/:id', () => {
   });
 
   it('returns 403 if not owner', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindUnique.mockResolvedValue({ id: 1, userId: 'u2' });
     const response = await request(app).put('/v1/ratings/1').send({ score: 9 });
     expect(response.status).toBe(403);
   });
 
   it('returns 404 if not found', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindUnique.mockResolvedValue(null);
     const response = await request(app).put('/v1/ratings/1').send({ score: 9 });
     expect(response.status).toBe(404);
   });
 
   it('handles server errors', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindUnique.mockRejectedValue(new Error('error'));
     const response = await request(app).put('/v1/ratings/1').send({ score: 9 });
     expect(response.status).toBe(500);
@@ -189,7 +191,7 @@ describe('PUT /v1/ratings/:id', () => {
 
 describe('DELETE /v1/ratings/:id', () => {
   it('deletes rating if owner', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindUnique.mockResolvedValue({ id: 1, userId: 'u1' });
     mockPrismaDelete.mockResolvedValue({ id: 1 });
     const response = await request(app).delete('/v1/ratings/1');
@@ -197,21 +199,21 @@ describe('DELETE /v1/ratings/:id', () => {
   });
 
   it('returns 403 if not owner', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindUnique.mockResolvedValue({ id: 1, userId: 'u2' });
     const response = await request(app).delete('/v1/ratings/1');
     expect(response.status).toBe(403);
   });
 
   it('returns 404 if not found', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindUnique.mockResolvedValue(null);
     const response = await request(app).delete('/v1/ratings/1');
     expect(response.status).toBe(404);
   });
 
   it('handles server errors', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindUnique.mockRejectedValue(new Error('error'));
     const response = await request(app).delete('/v1/ratings/1');
     expect(response.status).toBe(500);
@@ -237,7 +239,7 @@ describe('GET /v1/ratings/me', () => {
   });
 
   it('returns enriched ratings with TMDB metadata and author', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindMany.mockResolvedValue([
       { id: 1, mediaId: 550, mediaType: 'movie', score: 8.5, user: null },
     ]);
@@ -253,7 +255,7 @@ describe('GET /v1/ratings/me', () => {
   });
 
   it('returns movieSummary: null when TMDB fetch fails for an item', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindMany.mockResolvedValue([
       { id: 1, mediaId: 550, mediaType: 'movie', score: 8.5, user: null },
     ]);
@@ -267,7 +269,7 @@ describe('GET /v1/ratings/me', () => {
   });
 
   it('returns caller-scoped ratings with author embedded', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindMany.mockResolvedValue([
       {
         id: 3,
@@ -292,7 +294,7 @@ describe('GET /v1/ratings/me', () => {
   });
 
   it('ignores client-supplied userId query param', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindMany.mockResolvedValue([]);
     mockPrismaCount.mockResolvedValue(0);
 
@@ -303,7 +305,7 @@ describe('GET /v1/ratings/me', () => {
   });
 
   it('handles database errors', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindMany.mockRejectedValue(new Error('db error'));
 
     const response = await request(app).get('/v1/ratings/me');
@@ -311,7 +313,7 @@ describe('GET /v1/ratings/me', () => {
   });
 
   it('respects limit and page query params', async () => {
-    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'USER' });
     mockPrismaFindMany.mockResolvedValue([]);
     mockPrismaCount.mockResolvedValue(0);
 

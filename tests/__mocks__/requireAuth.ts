@@ -23,11 +23,8 @@
  */
 
 import type { Request, Response, NextFunction, RequestHandler, ErrorRequestHandler } from 'express';
-import {
-  ROLE_HIERARCHY,
-  type Role,
-  type AuthenticatedUser,
-} from '../../src/middleware/requireAuth';
+import { ROLE_HIERARCHY, type AuthenticatedUser } from '../../src/middleware/requireAuth';
+import type { Role } from '@/generated/prisma/client';
 
 export { ROLE_HIERARCHY };
 export type { Role, AuthenticatedUser };
