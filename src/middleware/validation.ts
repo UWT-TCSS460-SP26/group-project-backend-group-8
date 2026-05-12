@@ -23,7 +23,7 @@ export const UpdateReviewSchema = z.object({
   body: z.string().min(1),
 });
 
-// Public-GET query schemas. z.coerce parses Express's stringly-typed req.query.
+// Public-GET query schemas. z.coerce parses Express's strongly-typed req.query.
 const MediaQuery = {
   mediaId: z.coerce.number().int().positive(),
   mediaType: z.enum(['movie', 'tv']),
@@ -115,10 +115,7 @@ export const validateGetMyListQuery = validate('query', GetMyListQuerySchema);
 export const validateGetMediaQuery = validate('query', GetMediaQuerySchema);
 export const validatePostIssueBody = validate('body', PostIssueSchema);
 
-export type RatingBody = z.infer<typeof PostRatingSchema>;
-export type UpdateRatingBody = z.infer<typeof UpdateRatingSchema>;
 export type PostReviewBody = z.infer<typeof PostReviewSchema>;
-export type UpdateReviewBody = z.infer<typeof UpdateReviewSchema>;
 export type GetReviewsQuery = z.infer<typeof GetReviewsQuerySchema>;
 export type GetRatingsQuery = z.infer<typeof GetRatingsQuerySchema>;
 export type GetMyListQuery = z.infer<typeof GetMyListQuerySchema>;

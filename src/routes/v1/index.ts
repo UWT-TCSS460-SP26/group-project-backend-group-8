@@ -4,8 +4,8 @@ import { movieRouter } from './movie.proxy';
 import { ratingsRouter } from './ratings';
 import { reviewsRouter } from './reviews';
 import { issuesRouter } from './issues';
-import { mediaRouter } from './media';
 import { communityRouter } from './community';
+import { mediaRouter } from '@/routes/v1/media';
 
 const v1Routes = Router();
 
