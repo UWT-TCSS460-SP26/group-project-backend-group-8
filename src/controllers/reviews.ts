@@ -5,6 +5,8 @@ import { PostReviewBody, GetReviewsQuery, GetMyListQuery } from '@/middleware/va
 import { resolveLocalUser } from '@/auth/resolveLocalUser';
 import { hasRoleAtLeast } from '@/middleware/requireAuth';
 import { authorUserSelect, toAuthor, type AuthorUser } from '@/utils/author';
+import { getMovieDetails } from '@/controllers/movie.proxy';
+import { getTvSeriesDetails } from '@/controllers/tv.proxy';
 
 type ReviewWithUser = {
   id: number;
@@ -20,7 +22,7 @@ type ReviewWithUser = {
 };
 
 const withAuthor = (review: ReviewWithUser) => {
-  const { user, ...rest } = review;
+  const { user, userId: _userId, username: _username, ...rest } = review;
   return { ...rest, author: toAuthor(user) };
 };
 
@@ -108,8 +110,42 @@ export const getMyReviews = async (request: Request, response: Response) => {
       prisma.review.count({ where }),
     ]);
 
+    const enriched = await Promise.all(
+      reviews.map(async (review) => {
+        let details: Record<string, unknown> | null = null;
+        const mockReq = { params: { id: String(review.mediaId) } } as unknown as Request;
+        const mockRes = {
+          json: (data: Record<string, unknown>) => {
+            details = data;
+          },
+          status: () => mockRes,
+        } as unknown as Response;
+
+        try {
+          if (review.mediaType === 'movie') {
+            await getMovieDetails(mockReq, mockRes);
+          } else if (review.mediaType === 'tv') {
+            await getTvSeriesDetails(mockReq, mockRes);
+          }
+        } catch (_err) {
+          // Ignore error, details remains null
+        }
+
+        if (details && 'error' in details) {
+          details = null;
+        }
+
+        return {
+          ...withAuthor(review as ReviewWithUser),
+          ...(review.mediaType === 'movie'
+            ? { movieSummary: details }
+            : { tvSeriesSummary: details }),
+        };
+      })
+    );
+
     response.status(200).json({
-      data: reviews.map((r) => withAuthor(r as ReviewWithUser)),
+      data: enriched,
       pagination: {
         page,
         limit,

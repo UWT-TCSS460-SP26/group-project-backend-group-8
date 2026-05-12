@@ -619,6 +619,11 @@ paths:
         Returns reviews authored by the caller, identified by the JWT `sub`
         claim. Any client-supplied `userId` query parameter is ignored —
         identity is taken only from the verified token.
+
+        Each review is enriched with either a `movieSummary` or `tvSeriesSummary`
+        field containing that title's metadata, depending on the mediaType, or null
+        if no metadata exists. Each item also includes an `author` object.
+
       security:
         - bearerAuth: []
       parameters:
@@ -636,10 +641,34 @@ paths:
         - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
       responses:
         '200':
-          description: Paginated list of the caller's reviews
+          description: Paginated list of the caller's reviews, enriched with metadata
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PaginatedReviews' }
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/Review'
+                        - type: object
+                          properties:
+                            movieSummary:
+                              allOf:
+                                - $ref: '#/components/schemas/MovieSummary'
+                              nullable: true
+                            tvSeriesSummary:
+                              allOf:
+                                - $ref: '#/components/schemas/TvSeriesSummary'
+                              nullable: true
+                  pagination:
+                    type: object
+                    properties:
+                      page: { type: integer, example: 1 }
+                      limit: { type: integer, example: 25 }
+                      total: { type: integer, example: 53 }
+                      totalPages: { type: integer, example: 3 }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/InternalError' }
@@ -905,15 +934,15 @@ paths:
   /v1/ratings/me:
     get:
       tags: [Ratings]
-      summary: Authenticated caller's rating history with TMDB metadata
+      summary: Authenticated caller's rating history with title metadata
       description: |
         Returns ratings submitted by the caller, identified by the JWT `sub`
         claim. Any client-supplied `userId` query parameter is ignored.
 
-        Each rating is enriched with TMDB metadata (`tmdb` field). If TMDB is
-        unavailable for a particular item, that item's `tmdb` field is `null`
-        rather than failing the whole request. Each item also includes an
-        `author` object (see Story 5).
+        Each rating is enriched with either a `movieSummary` or `tvSeriesSummary`
+        field containing that title's metadata, depending on the mediaType, or null
+        if no metadata exists. Each item also includes an `author` object.
+
       security:
         - bearerAuth: []
       parameters:
@@ -931,7 +960,7 @@ paths:
         - { in: query, name: order, schema: { type: string, enum: [asc, desc], default: desc } }
       responses:
         '200':
-          description: Paginated rating history enriched with TMDB metadata and author
+          description: Paginated rating history enriched with title metadata and author
           content:
             application/json:
               schema:
@@ -944,14 +973,14 @@ paths:
                         - { $ref: '#/components/schemas/Rating' }
                         - type: object
                           properties:
-                            author:
-                              nullable: true
+                            movieSummary:
                               allOf:
-                                - $ref: '#/components/schemas/Author'
-                            tmdb:
+                                - $ref: '#/components/schemas/MovieSummary'
                               nullable: true
+                            tvSeriesSummary:
                               allOf:
-                                - $ref: '#/components/schemas/TmdbItemDetails'
+                                - $ref: '#/components/schemas/TvSeriesSummary'
+                              nullable: true
                   pagination:
                     type: object
                     properties:
@@ -1464,8 +1493,6 @@ components:
       description: A user-submitted review of a movie or TV series
       properties:
         id: { type: integer, example: 1 }
-        userId: { type: integer, nullable: true, example: 42 }
-        username: { type: string, example: 'alice' }
         mediaId: { type: integer, example: 550 }
         mediaType: { type: string, enum: [movie, tv], example: movie }
         title: { type: string, nullable: true, example: 'Loved it' }
@@ -1507,7 +1534,6 @@ components:
       description: A user-submitted numeric rating for a movie or TV series
       properties:
         id: { type: integer, example: 1 }
-        userId: { type: integer, nullable: true, example: 42 }
         mediaId: { type: integer, example: 550 }
         mediaType: { type: string, enum: [movie, tv], example: movie }
         score:

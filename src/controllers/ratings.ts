@@ -3,8 +3,9 @@ import { prisma } from '@/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { GetRatingsQuery, GetMyRatingsQuery } from '@/middleware/validation';
 import { resolveLocalUser } from '@/auth/resolveLocalUser';
-import { fetchTmdbItemDetails } from '@/utils/tmdb';
 import { authorUserSelect, toAuthor, type AuthorUser } from '@/utils/author';
+import { getMovieDetails } from '@/controllers/movie.proxy';
+import { getTvSeriesDetails } from '@/controllers/tv.proxy';
 
 type RatingWithUser = {
   id: number;
@@ -18,7 +19,7 @@ type RatingWithUser = {
 };
 
 const withAuthor = (rating: RatingWithUser) => {
-  const { user, ...rest } = rating;
+  const { user, userId: _userId, ...rest } = rating;
   return { ...rest, author: toAuthor(user) };
 };
 
@@ -27,7 +28,7 @@ const ratingInclude = { user: { select: authorUserSelect } } as const;
 /**
  * Auth required — the calling user's full rating history. Each row includes
  * the author identity (US5) and is enriched with TMDB metadata (US3). If
- * TMDB is unavailable for a particular item, that item's `tmdb` field is null
+ * TMDB is unavailable for a particular item, that item's `movieSummary` or `tvSeriesSummary` field is null
  * rather than failing the whole request.
  */
 export const getMyRatings = async (request: Request, response: Response) => {
@@ -50,8 +51,35 @@ export const getMyRatings = async (request: Request, response: Response) => {
 
     const enriched = await Promise.all(
       ratings.map(async (rating) => {
-        const tmdb = await fetchTmdbItemDetails(rating.mediaId, rating.mediaType as 'movie' | 'tv');
-        return { ...withAuthor(rating as RatingWithUser), tmdb };
+        let details: Record<string, unknown> | null = null;
+        const mockReq = { params: { id: String(rating.mediaId) } } as unknown as Request;
+        const mockRes = {
+          json: (data: Record<string, unknown>) => {
+            details = data;
+          },
+          status: () => mockRes,
+        } as unknown as Response;
+
+        try {
+          if (rating.mediaType === 'movie') {
+            await getMovieDetails(mockReq, mockRes);
+          } else if (rating.mediaType === 'tv') {
+            await getTvSeriesDetails(mockReq, mockRes);
+          }
+        } catch (_err) {
+          // Ignore error, details remains null
+        }
+
+        if (details && 'error' in details) {
+          details = null;
+        }
+
+        return {
+          ...withAuthor(rating as RatingWithUser),
+          ...(rating.mediaType === 'movie'
+            ? { movieSummary: details }
+            : { tvSeriesSummary: details }),
+        };
       })
     );
 
