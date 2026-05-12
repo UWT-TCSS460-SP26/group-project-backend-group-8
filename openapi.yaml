@@ -621,7 +621,7 @@ paths:
         identity is taken only from the verified token.
 
         Each review is enriched with either a `movieSummary` or `tvSeriesSummary`
-        field containing that title's metadata, depending on the mediaType, or null
+        field containing that title's metadata, depending on the mediaType, or `null`
         if no metadata exists. Each item also includes an `author` object.
 
       security:
@@ -940,7 +940,7 @@ paths:
         claim. Any client-supplied `userId` query parameter is ignored.
 
         Each rating is enriched with either a `movieSummary` or `tvSeriesSummary`
-        field containing that title's metadata, depending on the mediaType, or null
+        field containing that title's metadata, depending on the mediaType, or `null`
         if no metadata exists. Each item also includes an `author` object.
 
       security:
@@ -1229,34 +1229,37 @@ paths:
 
   # ── Community ─────────────────────────────────────────────────
 
-  /v1/community/top-rated:
+  /v1/community/top-rated/movie:
     get:
       tags: [Community]
-      summary: Community top-rated movies and shows
+      summary: Community top-rated movies
       description: |
-        Returns the highest-rated movies and shows by community average score,
+        Returns the highest-rated movies by community average score,
         filtered to titles that have at least `minCount` ratings (default 3) to
         prevent single-vote outliers from dominating the list.
 
-        Each result is enriched with TMDB metadata. If TMDB is unavailable for
-        a particular item, that item's `tmdb` field is `null`.
+        Each result is enriched with a `movieSummary` field containing that title's 
+        metadata or `null` if no metadata exists. 
 
         **Caching:** results are cached in memory for 5 minutes per unique
         `(limit, minCount)` combination. The response includes `cached: true`
         and `cacheTtlSeconds: 300` when a cached result is served.
       parameters:
-        - {
-            in: query,
-            name: limit,
-            schema: { type: integer, minimum: 1, maximum: 100, default: 20 },
-          }
+        - in: query
+          name: limit
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
         - in: query
           name: minCount
           description: Minimum number of ratings a title must have to appear in the list
           schema: { type: integer, minimum: 1, default: 3 }
       responses:
         '200':
-          description: Top-rated content enriched with TMDB metadata
+          description: Top-rated movies enriched with title metadata
           content:
             application/json:
               schema:
@@ -1267,21 +1270,89 @@ paths:
                     items:
                       type: object
                       properties:
-                        mediaId: { type: integer, example: 550 }
-                        mediaType: { type: string, enum: [movie, tv], example: movie }
                         avgScore: { type: number, format: float, example: 8.7 }
                         ratingCount: { type: integer, example: 42 }
-                        tmdb:
+                        movieSummary:
+                          allOf:
+                            - $ref: '#/components/schemas/MovieSummary'
                           nullable: true
-                          type: object
-                          properties:
-                            id: { type: integer, example: 550 }
-                            title: { type: string, example: Fight Club }
-                            synopsis: { type: string }
-                            posterUrl: { type: string, format: uri }
-                            releaseDate: { type: string, format: date, nullable: true }
                   cached: { type: boolean, example: false }
                   cacheTtlSeconds: { type: integer, example: 300 }
+        '400':
+          description: Validation failed (non-numeric limit or minCount)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              examples:
+                nonNumeric:
+                  summary: Non-numeric parameter
+                  value:
+                    error: 'Parameters "limit" and "minCount" must be numeric'
+        '500':
+          description: Database or TMDB error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/community/top-rated/tv:
+    get:
+      tags: [Community]
+      summary: Community top-rated TV series
+      description: |
+        Returns the highest-rated TV series by community average score,
+        filtered to titles that have at least `minCount` ratings (default 3) to
+        prevent single-vote outliers from dominating the list.
+
+        Each result is enriched with a `tvSeriesSummary` field containing that title's 
+        metadata or `null` if no metadata exists. 
+
+        **Caching:** results are cached in memory for 5 minutes per unique
+        `(limit, minCount)` combination. The response includes `cached: true`
+        and `cacheTtlSeconds: 300` when a cached result is served.
+      parameters:
+        - in: query
+          name: limit
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: minCount
+          description: Minimum number of ratings a title must have to appear in the list
+          schema: { type: integer, minimum: 1, default: 3 }
+      responses:
+        '200':
+          description: Top-rated TV series enriched with title metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        avgScore: { type: number, format: float, example: 8.7 }
+                        ratingCount: { type: integer, example: 42 }
+                        tvSeriesSummary:
+                          allOf:
+                            - $ref: '#/components/schemas/TvSeriesSummary'
+                          nullable: true
+                  cached: { type: boolean, example: false }
+                  cacheTtlSeconds: { type: integer, example: 300 }
+        '400':
+          description: Validation failed (non-numeric limit or minCount)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              examples:
+                nonNumeric:
+                  summary: Non-numeric parameter
+                  value:
+                    error: 'Parameters "limit" and "minCount" must be numeric'
         '500':
           description: Database or TMDB error
           content:
