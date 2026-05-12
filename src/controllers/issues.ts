@@ -118,7 +118,7 @@ export const patchIssue = async (request: Request, response: Response) => {
 
     const updated = await prisma.issue.update({
       where: { id },
-      data: { status: status as IssueStatus },
+      data: { status: status.toUpperCase() as IssueStatus },
     });
 
     response.status(200).json({
