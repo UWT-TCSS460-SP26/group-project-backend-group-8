@@ -157,7 +157,7 @@ describe('POST /v1/issues', () => {
 
 describe('GET /v1/issues', () => {
   it('returns paginated issues for an admin', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockTransaction.mockResolvedValue([[baseIssue], 1]);
 
     const response = await request(app).get('/v1/issues');
@@ -178,19 +178,19 @@ describe('GET /v1/issues', () => {
   });
 
   it('returns 403 for a User-role token', async () => {
-    setMockUser({ sub: 'user-1', role: 'User' });
+    setMockUser({ sub: 'user-1', role: 'USER' });
     const response = await request(app).get('/v1/issues');
     expect(response.status).toBe(403);
   });
 
   it('returns 403 for a Moderator-role token', async () => {
-    setMockUser({ sub: 'mod-1', role: 'Moderator' });
+    setMockUser({ sub: 'mod-1', role: 'MODERATOR' });
     const response = await request(app).get('/v1/issues');
     expect(response.status).toBe(403);
   });
 
   it('allows SuperAdmin', async () => {
-    setMockUser({ sub: 'super-1', role: 'SuperAdmin' });
+    setMockUser({ sub: 'super-1', role: 'SUPER_ADMIN' });
     mockTransaction.mockResolvedValue([[], 0]);
 
     const response = await request(app).get('/v1/issues');
@@ -198,7 +198,7 @@ describe('GET /v1/issues', () => {
   });
 
   it('filters by status=open', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockTransaction.mockResolvedValue([[baseIssue], 1]);
 
     const response = await request(app).get('/v1/issues?status=open');
@@ -208,14 +208,14 @@ describe('GET /v1/issues', () => {
   });
 
   it('returns 400 for an invalid status value', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     const response = await request(app).get('/v1/issues?status=banana');
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Validation failed');
   });
 
   it('respects page and limit params', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockTransaction.mockResolvedValue([[], 50]);
 
     const response = await request(app).get('/v1/issues?page=2&limit=10');
@@ -227,13 +227,13 @@ describe('GET /v1/issues', () => {
   });
 
   it('returns 400 when limit exceeds 100', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     const response = await request(app).get('/v1/issues?limit=999');
     expect(response.status).toBe(400);
   });
 
   it('returns 500 with a safe message when the DB throws', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockTransaction.mockRejectedValue(new Error('db exploded'));
 
     const response = await request(app).get('/v1/issues');
@@ -247,7 +247,7 @@ describe('GET /v1/issues', () => {
 
 describe('GET /v1/issues/:id', () => {
   it('returns full issue detail for an admin', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(baseIssue);
 
     const response = await request(app).get('/v1/issues/1');
@@ -262,13 +262,13 @@ describe('GET /v1/issues/:id', () => {
   });
 
   it('returns 403 for a User-role token', async () => {
-    setMockUser({ sub: 'user-1', role: 'User' });
+    setMockUser({ sub: 'user-1', role: 'USER' });
     const response = await request(app).get('/v1/issues/1');
     expect(response.status).toBe(403);
   });
 
   it('returns 404 for a non-existent issue', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(null);
 
     const response = await request(app).get('/v1/issues/99999');
@@ -277,13 +277,13 @@ describe('GET /v1/issues/:id', () => {
   });
 
   it('returns 400 for a non-numeric id', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     const response = await request(app).get('/v1/issues/abc');
     expect(response.status).toBe(400);
   });
 
   it('returns 500 with a safe message when the DB throws', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockRejectedValue(new Error('timeout'));
 
     const response = await request(app).get('/v1/issues/1');
@@ -297,7 +297,7 @@ describe('GET /v1/issues/:id', () => {
 
 describe('PATCH /v1/issues/:id', () => {
   it('updates status to in_progress', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(baseIssue);
     mockIssueUpdate.mockResolvedValue({
       ...baseIssue,
@@ -312,7 +312,7 @@ describe('PATCH /v1/issues/:id', () => {
   });
 
   it('accepts all valid status values', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
 
     for (const status of ['open', 'in_progress', 'resolved', 'closed']) {
       mockIssueFindUnique.mockResolvedValue(baseIssue);
@@ -325,7 +325,7 @@ describe('PATCH /v1/issues/:id', () => {
   });
 
   it('returns 400 for an invalid status value', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
 
     const response = await request(app).patch('/v1/issues/1').send({ status: 'banana' });
 
@@ -335,7 +335,7 @@ describe('PATCH /v1/issues/:id', () => {
   });
 
   it('returns 400 for an empty body', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
 
     const response = await request(app).patch('/v1/issues/1').send({});
 
@@ -349,13 +349,13 @@ describe('PATCH /v1/issues/:id', () => {
   });
 
   it('returns 403 for a User-role token', async () => {
-    setMockUser({ sub: 'user-1', role: 'User' });
+    setMockUser({ sub: 'user-1', role: 'USER' });
     const response = await request(app).patch('/v1/issues/1').send({ status: 'resolved' });
     expect(response.status).toBe(403);
   });
 
   it('returns 404 for a non-existent issue', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(null);
 
     const response = await request(app).patch('/v1/issues/99999').send({ status: 'resolved' });
@@ -364,13 +364,13 @@ describe('PATCH /v1/issues/:id', () => {
   });
 
   it('returns 400 for a non-numeric id', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     const response = await request(app).patch('/v1/issues/abc').send({ status: 'resolved' });
     expect(response.status).toBe(400);
   });
 
   it('returns 500 with a safe message when the DB throws', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(baseIssue);
     mockIssueUpdate.mockRejectedValue(new Error('lock timeout'));
 
@@ -385,7 +385,7 @@ describe('PATCH /v1/issues/:id', () => {
 
 describe('DELETE /v1/issues/:id', () => {
   it('deletes an issue and returns 204', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(baseIssue);
     mockIssueDelete.mockResolvedValue(baseIssue);
 
@@ -402,19 +402,19 @@ describe('DELETE /v1/issues/:id', () => {
   });
 
   it('returns 403 for a User-role token', async () => {
-    setMockUser({ sub: 'user-1', role: 'User' });
+    setMockUser({ sub: 'user-1', role: 'USER' });
     const response = await request(app).delete('/v1/issues/1');
     expect(response.status).toBe(403);
   });
 
   it('returns 403 for a Moderator-role token', async () => {
-    setMockUser({ sub: 'mod-1', role: 'Moderator' });
+    setMockUser({ sub: 'mod-1', role: 'MODERATOR' });
     const response = await request(app).delete('/v1/issues/1');
     expect(response.status).toBe(403);
   });
 
   it('returns 404 for a non-existent issue', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(null);
 
     const response = await request(app).delete('/v1/issues/99999');
@@ -423,13 +423,13 @@ describe('DELETE /v1/issues/:id', () => {
   });
 
   it('returns 400 for a non-numeric id', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     const response = await request(app).delete('/v1/issues/abc');
     expect(response.status).toBe(400);
   });
 
   it('does not call delete if the issue does not exist', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(null);
 
     await request(app).delete('/v1/issues/99999');
@@ -437,7 +437,7 @@ describe('DELETE /v1/issues/:id', () => {
   });
 
   it('returns 500 with a safe message when the DB throws', async () => {
-    setMockUser({ sub: 'admin-1', role: 'Admin' });
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(baseIssue);
     mockIssueDelete.mockRejectedValue(new Error('foreign key violation'));
 
