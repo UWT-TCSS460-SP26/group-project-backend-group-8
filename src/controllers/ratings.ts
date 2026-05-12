@@ -4,8 +4,7 @@ import { Prisma } from '@/generated/prisma/client';
 import { GetRatingsQuery, GetMyRatingsQuery } from '@/middleware/validation';
 import { resolveLocalUser } from '@/auth/resolveLocalUser';
 import { authorUserSelect, toAuthor, type AuthorUser } from '@/utils/author';
-import { getMovieDetails } from '@/controllers/movie.proxy';
-import { getTvSeriesDetails } from '@/controllers/tv.proxy';
+import { fetchMovieDetails, fetchTvDetails } from '@/utils/tmdb';
 
 type RatingWithUser = {
   id: number;
@@ -51,28 +50,10 @@ export const getMyRatings = async (request: Request, response: Response) => {
 
     const enriched = await Promise.all(
       ratings.map(async (rating) => {
-        let details: Record<string, unknown> | null = null;
-        const mockReq = { params: { id: String(rating.mediaId) } } as unknown as Request;
-        const mockRes = {
-          json: (data: Record<string, unknown>) => {
-            details = data;
-          },
-          status: () => mockRes,
-        } as unknown as Response;
-
-        try {
-          if (rating.mediaType === 'movie') {
-            await getMovieDetails(mockReq, mockRes);
-          } else if (rating.mediaType === 'tv') {
-            await getTvSeriesDetails(mockReq, mockRes);
-          }
-        } catch (_err) {
-          // Ignore error, details remains null
-        }
-
-        if (details && 'error' in details) {
-          details = null;
-        }
+        const details =
+          rating.mediaType === 'movie'
+            ? await fetchMovieDetails(rating.mediaId)
+            : await fetchTvDetails(rating.mediaId);
 
         return {
           ...withAuthor(rating as RatingWithUser),

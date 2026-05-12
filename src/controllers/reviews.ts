@@ -5,8 +5,7 @@ import { PostReviewBody, GetReviewsQuery, GetMyListQuery } from '@/middleware/va
 import { resolveLocalUser } from '@/auth/resolveLocalUser';
 import { hasRoleAtLeast } from '@/middleware/requireAuth';
 import { authorUserSelect, toAuthor, type AuthorUser } from '@/utils/author';
-import { getMovieDetails } from '@/controllers/movie.proxy';
-import { getTvSeriesDetails } from '@/controllers/tv.proxy';
+import { fetchMovieDetails, fetchTvDetails } from '@/utils/tmdb';
 
 type ReviewWithUser = {
   id: number;
@@ -112,28 +111,10 @@ export const getMyReviews = async (request: Request, response: Response) => {
 
     const enriched = await Promise.all(
       reviews.map(async (review) => {
-        let details: Record<string, unknown> | null = null;
-        const mockReq = { params: { id: String(review.mediaId) } } as unknown as Request;
-        const mockRes = {
-          json: (data: Record<string, unknown>) => {
-            details = data;
-          },
-          status: () => mockRes,
-        } as unknown as Response;
-
-        try {
-          if (review.mediaType === 'movie') {
-            await getMovieDetails(mockReq, mockRes);
-          } else if (review.mediaType === 'tv') {
-            await getTvSeriesDetails(mockReq, mockRes);
-          }
-        } catch (_err) {
-          // Ignore error, details remains null
-        }
-
-        if (details && 'error' in details) {
-          details = null;
-        }
+        const details =
+          review.mediaType === 'movie'
+            ? await fetchMovieDetails(review.mediaId)
+            : await fetchTvDetails(review.mediaId);
 
         return {
           ...withAuthor(review as ReviewWithUser),
