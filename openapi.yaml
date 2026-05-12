@@ -69,43 +69,40 @@ paths:
             type: string
           description: Movie title to search for
           example: Inception
-        - name: limit
+        - name: page
           in: query
           required: false
           schema:
             type: integer
             minimum: 1
-            default: 20
-          description: Maximum number of results to return (must be a positive integer). Defaults to 20 or the actual number of results, whichever is smaller.
-          example: 2
+            default: 1
+          description: Page number for pagination. Defaults to 1.
+          example: 1
       responses:
         '200':
-          description: List of matching movies
+          description: List of matching movies with pagination info
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: 'Displaying 2 out of 12 available results'
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/MovieSummary'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationInfo'
               example:
-                message: 'Displaying 2 out of 12 available results'
                 results:
                   - id: 27205
                     title: 'Inception'
                     synopsis: 'A thief who steals corporate secrets through dream-sharing technology.'
                     releaseDate: '2010-07-16'
                     posterUrl: 'https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
-                  - id: 613096
-                    title: 'The Inception of Something'
-                    synopsis: 'A short documentary about inception.'
-                    releaseDate: '2019-10-10'
-                    posterUrl: 'https://image.tmdb.org/t/p/original/something.jpg'
+                pagination:
+                  page: 1
+                  totalResults: 12
+                  totalPages: 2
         '400':
           description: Missing or invalid query parameter
           content:
@@ -117,12 +114,8 @@ paths:
                   summary: Missing title
                   value:
                     error: 'Parameter "title" is required (query param)'
-                invalidLimit:
-                  summary: Invalid limit
-                  value:
-                    error: 'Parameter "limit" must be a positive integer'
         '500':
-          description: API key is not configured
+          description: API key is not configured or other server error
           content:
             application/json:
               schema:
@@ -210,58 +203,55 @@ paths:
       summary: Get popular movies
       description: |
         Returns the current list of popular movies, transformed into
-        simplified `MovieSummary` objects.
+        simplified `MovieSummary` objects with pagination info. Maximum 500 pages.
       parameters:
-        - name: limit
+        - name: page
           in: query
           required: false
           schema:
             type: integer
             minimum: 1
-            default: 20
-          description: Maximum number of results to return (must be a positive integer). Defaults to 20 if not provided.
-          example: 2
+            default: 1
+          description: Page number for pagination. Defaults to 1. Max 500.
+          example: 1
       responses:
         '200':
-          description: List of popular movies
+          description: List of popular movies with pagination info
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: 'Displaying 2 out of 10000 available results'
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/MovieSummary'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationInfo'
               example:
-                message: 'Displaying 2 out of 10000 available results'
                 results:
                   - id: 27205
                     title: 'Inception'
                     synopsis: 'A thief who steals corporate secrets through dream-sharing technology.'
                     releaseDate: '2010-07-16'
                     posterUrl: 'https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
-                  - id: 157336
-                    title: 'Interstellar'
-                    synopsis: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival."
-                    releaseDate: '2014-11-05'
-                    posterUrl: 'https://image.tmdb.org/t/p/original/gEU2QniE6E77NI6lCU6MvrIdY08.jpg'
+                pagination:
+                  page: 1
+                  totalResults: 10000
+                  totalPages: 500
         '400':
-          description: Invalid limit parameter
+          description: Invalid query parameter
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
-                invalidLimit:
-                  summary: Invalid Limit
+                invalidPage:
+                  summary: Invalid Page
                   value:
-                    error: 'Parameter "limit" must be a positive integer'
+                    error: 'Parameter "page" must be a positive integer from 1 to 500'
         '500':
-          description: API key is not configured
+          description: API key is not configured or TMDB error
           content:
             application/json:
               schema:
@@ -291,7 +281,7 @@ paths:
       summary: Search TV series by title
       description: |
         Searches for TV series matching the given title. Results are transformed
-        into a simplified `TvSeriesSummary` shape.
+        into a simplified `TvSeriesSummary` shape with pagination.
       parameters:
         - name: title
           in: query
@@ -300,15 +290,15 @@ paths:
             type: string
           description: TV series title to search for
           example: Breaking Bad
-        - name: limit
+        - name: page
           in: query
           required: false
           schema:
             type: integer
             minimum: 1
-            default: 20
-          description: Maximum number of results to return (must be a positive integer). Defaults to 20 or the actual number of results, whichever is smaller.
-          example: 2
+            default: 1
+          description: Page number for pagination. Defaults to 1.
+          example: 1
       responses:
         '200':
           description: List of matching TV series
@@ -317,26 +307,23 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: 'Displaying 2 out of 5 available results'
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/TvSeriesSummary'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationInfo'
               example:
-                message: 'Displaying 2 out of 5 available results'
                 results:
                   - id: 1396
                     title: 'Breaking Bad'
                     synopsis: 'A chemistry teacher diagnosed with cancer turns to manufacturing drugs.'
                     airDate: '2008-01-20'
                     posterUrl: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
-                  - id: 232533
-                    title: 'Breaking Bad Fortune Teller'
-                    synopsis: 'During the Ming Dynasty, the emperor sets out for Xinjiang to advocate peace. Shortly after his absence, mysterious occurrences plague the palace and Daoist Tian Mu Tong is called to cast out demons. Together with eunuch Xiao Mo Gu and Jin Yi Wei leader Yun Xiang Rong, Mu Tong uncovers deep dark secrets and conspiracies hidden within conspiracies.'
-                    airDate: '2016-04-11'
-                    posterUrl: 'https://image.tmdb.org/t/p/original/n8dKkbPkdEPFCFmjNvrUl1gUAYr.jpg'
+                pagination:
+                  page: 1
+                  totalResults: 5
+                  totalPages: 1
         '400':
           description: Missing or invalid query parameter
           content:
@@ -348,12 +335,8 @@ paths:
                   summary: Missing title
                   value:
                     error: 'Parameter "title" is required (query param)'
-                invalidLimit:
-                  summary: Invalid limit
-                  value:
-                    error: 'Parameter "limit" must be a positive integer'
         '500':
-          description: API key is not configured
+          description: API key is not configured or other server error
           content:
             application/json:
               schema:
@@ -440,17 +423,17 @@ paths:
       tags: [TV Series]
       summary: Get popular TV series
       description: |
-        Returns the current list of popular TV series, transformed into simplified `TvSeriesSummary` objects.
+        Returns the current list of popular TV series, transformed into simplified `TvSeriesSummary` objects with pagination info. Maximum 500 pages.
       parameters:
-        - name: limit
+        - name: page
           in: query
           required: false
           schema:
             type: integer
             minimum: 1
-            default: 20
-          description: Maximum number of results to return (must be a positive integer). Defaults to 20 if not provided.
-          example: 20
+            default: 1
+          description: Page number for pagination. Defaults to 1. Max 500 pages.
+          example: 1
       responses:
         '200':
           description: List of popular TV series
@@ -459,39 +442,36 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: 'Displaying 20 out of 10000 available results'
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/TvSeriesSummary'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationInfo'
               example:
-                message: 'Displaying 2 out of 10000 available results'
                 results:
                   - id: 1396
                     title: 'Breaking Bad'
                     synopsis: 'A chemistry teacher diagnosed with cancer turns to manufacturing drugs.'
                     airDate: '2008-01-20'
                     posterUrl: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
-                  - id: 66732
-                    title: 'Stranger Things'
-                    synopsis: "A love letter to the '80s classics that captivated a generation."
-                    airDate: '2016-07-15'
-                    posterUrl: 'https://image.tmdb.org/t/p/original/49WJfeN0moxb9IPfGn8m1Mg0.jpg'
+                pagination:
+                  page: 1
+                  totalResults: 10000
+                  totalPages: 500
         '400':
-          description: Invalid limit parameter
+          description: Invalid query parameter
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
-                invalidLimit:
-                  summary: Invalid Limit
+                invalidPage:
+                  summary: Invalid Page
                   value:
-                    error: 'Parameter "limit" must be a positive integer'
+                    error: 'Parameter "page" must be a positive integer from 1 to 500'
         '500':
-          description: API key is not configured
+          description: API key is not configured or other server error
           content:
             application/json:
               schema:
@@ -966,10 +946,12 @@ paths:
                           properties:
                             author:
                               nullable: true
-                              $ref: '#/components/schemas/Author'
+                              allOf:
+                                - $ref: '#/components/schemas/Author'
                             tmdb:
                               nullable: true
-                              $ref: '#/components/schemas/TmdbItemDetails'
+                              allOf:
+                                - $ref: '#/components/schemas/TmdbItemDetails'
                   pagination:
                     type: object
                     properties:
@@ -1342,6 +1324,23 @@ components:
         audience name (`group-8-api`). Pass the access token as
         `Authorization: Bearer <token>`. This API never mints tokens.
   schemas:
+    PaginationInfo:
+      type: object
+      description: Pagination information
+      properties:
+        page:
+          type: integer
+          description: The current page
+          example: 1
+        totalResults:
+          type: integer
+          description: The total number of results available
+          example: 12
+        totalPages:
+          type: integer
+          description: The total number of pages available
+          example: 2
+
     MovieSummary:
       type: object
       description: Simplified movie object

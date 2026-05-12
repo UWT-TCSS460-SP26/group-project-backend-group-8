@@ -40,19 +40,17 @@ describe('GET /v1/community/top-rated', () => {
       { mediaId: 550, mediaType: 'movie', _avg: { score: 9.0 }, _count: { score: 5 } },
       { mediaId: 1396, mediaType: 'tv', _avg: { score: 8.5 }, _count: { score: 4 } },
     ]);
-    mockFetch
-      .mockResolvedValueOnce(tmdbMovie(550, 'Fight Club'))
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          id: 1396,
-          name: 'Breaking Bad',
-          overview: 'Meth',
-          poster_path: '/bb.jpg',
-          first_air_date: '2008-01-20',
-        }),
-      });
+    mockFetch.mockResolvedValueOnce(tmdbMovie(550, 'Fight Club')).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: 1396,
+        name: 'Breaking Bad',
+        overview: 'Meth',
+        poster_path: '/bb.jpg',
+        first_air_date: '2008-01-20',
+      }),
+    });
 
     const response = await request(app).get('/v1/community/top-rated');
 
