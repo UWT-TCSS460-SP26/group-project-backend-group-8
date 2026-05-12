@@ -1,21 +1,22 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
-import { getMovieDetails } from './movie.proxy';
-import { getTvSeriesDetails } from './tv.proxy';
+import { fetchMovieDetails, fetchTvDetails, MovieSummary, TvSeriesSummary } from '@/utils/tmdb';
 import type { GetTopRatedQuery } from '@/middleware/validation';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 interface TopRatedMovieItem {
+  mediaId: number;
   avgScore: number;
   ratingCount: number;
-  movieSummary: Record<string, unknown> | null;
+  movieSummary: MovieSummary | null;
 }
 
 interface TopRatedTvItem {
+  mediaId: number;
   avgScore: number;
   ratingCount: number;
-  tvSeriesSummary: Record<string, unknown> | null;
+  tvSeriesSummary: TvSeriesSummary | null;
 }
 
 interface MovieCacheEntry {
@@ -96,26 +97,9 @@ export const getTopRatedMovies = async (_request: Request, response: Response): 
 
     const enriched: TopRatedMovieItem[] = await Promise.all(
       topRated.map(async (item) => {
-        let details: Record<string, unknown> | null = null;
-        const mockReq = { params: { id: String(item.mediaId) } } as unknown as Request;
-        const mockRes = {
-          json: (data: Record<string, unknown>) => {
-            details = data;
-          },
-          status: () => mockRes,
-        } as unknown as Response;
-
-        try {
-          await getMovieDetails(mockReq, mockRes);
-        } catch (_err) {
-          // Ignore error, details remains null
-        }
-
-        if (details && 'error' in details) {
-          details = null;
-        }
-
+        const details = await fetchMovieDetails(item.mediaId);
         return {
+          mediaId: item.mediaId,
           avgScore: Math.round((item._avg.score ?? 0) * 10) / 10,
           ratingCount: item._count.score,
           movieSummary: details,
@@ -162,26 +146,9 @@ export const getTopRatedTv = async (_request: Request, response: Response): Prom
 
     const enriched: TopRatedTvItem[] = await Promise.all(
       topRated.map(async (item) => {
-        let details: Record<string, unknown> | null = null;
-        const mockReq = { params: { id: String(item.mediaId) } } as unknown as Request;
-        const mockRes = {
-          json: (data: Record<string, unknown>) => {
-            details = data;
-          },
-          status: () => mockRes,
-        } as unknown as Response;
-
-        try {
-          await getTvSeriesDetails(mockReq, mockRes);
-        } catch (_err) {
-          // Ignore error, details remains null
-        }
-
-        if (details && 'error' in details) {
-          details = null;
-        }
-
+        const details = await fetchTvDetails(item.mediaId);
         return {
+          mediaId: item.mediaId,
           avgScore: Math.round((item._avg.score ?? 0) * 10) / 10,
           ratingCount: item._count.score,
           tvSeriesSummary: details,
