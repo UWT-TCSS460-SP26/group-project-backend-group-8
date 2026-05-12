@@ -650,14 +650,15 @@ paths:
                   data:
                     type: array
                     items:
-                      allOf:
-                        - $ref: '#/components/schemas/Review'
+                      oneOf:
                         - type: object
                           properties:
                             movieSummary:
                               allOf:
                                 - $ref: '#/components/schemas/MovieSummary'
                               nullable: true
+                        - type: object
+                          properties:
                             tvSeriesSummary:
                               allOf:
                                 - $ref: '#/components/schemas/TvSeriesSummary'
@@ -669,6 +670,49 @@ paths:
                       limit: { type: integer, example: 25 }
                       total: { type: integer, example: 53 }
                       totalPages: { type: integer, example: 3 }
+              examples:
+                movieReview:
+                  summary: Movie review
+                  value:
+                    data:
+                      - id: 1
+                        mediaId: 550
+                        mediaType: movie
+                        title: 'Loved it'
+                        body: 'A modern classic'
+                        createdAt: '2024-01-01T00:00:00.000Z'
+                        updatedAt: '2024-01-01T00:00:00.000Z'
+                        author:
+                          id: 42
+                          subjectId: 'auth2|abc123'
+                          displayName: 'alice'
+                        movieSummary:
+                          id: 550
+                          title: 'Fight Club'
+                          synopsis: 'A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.'
+                          releaseDate: '1999-10-15'
+                          posterUrl: 'https://image.tmdb.org/t/p/original/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'
+                tvReview:
+                  summary: TV series review
+                  value:
+                    data:
+                      - id: 2
+                        mediaId: 1396
+                        mediaType: tv
+                        title: 'Masterpiece'
+                        body: 'One of the best shows ever made.'
+                        createdAt: '2024-01-02T00:00:00.000Z'
+                        updatedAt: '2024-01-02T00:00:00.000Z'
+                        author:
+                          id: 42
+                          subjectId: 'auth2|abc123'
+                          displayName: 'alice'
+                        tvSeriesSummary:
+                          id: 1396
+                          title: 'Breaking Bad'
+                          synopsis: "A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine in order to secure his family's future."
+                          airDate: '2008-01-20'
+                          posterUrl: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/InternalError' }
@@ -969,14 +1013,15 @@ paths:
                   data:
                     type: array
                     items:
-                      allOf:
-                        - { $ref: '#/components/schemas/Rating' }
+                      oneOf:
                         - type: object
                           properties:
                             movieSummary:
                               allOf:
                                 - $ref: '#/components/schemas/MovieSummary'
                               nullable: true
+                        - type: object
+                          properties:
                             tvSeriesSummary:
                               allOf:
                                 - $ref: '#/components/schemas/TvSeriesSummary'
@@ -988,6 +1033,47 @@ paths:
                       limit: { type: integer, example: 20 }
                       total: { type: integer, example: 12 }
                       totalPages: { type: integer, example: 1 }
+              examples:
+                movieRating:
+                  summary: Movie rating
+                  value:
+                    data:
+                      - id: 1
+                        mediaId: 550
+                        mediaType: movie
+                        score: 8.5
+                        createdAt: '2024-01-01T00:00:00.000Z'
+                        updatedAt: '2024-01-01T00:00:00.000Z'
+                        author:
+                          id: 42
+                          subjectId: 'auth2|abc123'
+                          displayName: 'alice'
+                        movieSummary:
+                          id: 550
+                          title: 'Fight Club'
+                          synopsis: 'A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.'
+                          releaseDate: '1999-10-15'
+                          posterUrl: 'https://image.tmdb.org/t/p/original/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'
+                tvRating:
+                  summary: TV series rating
+                  value:
+                    data:
+                      - id: 2
+                        mediaId: 1396
+                        mediaType: tv
+                        score: 9.5
+                        createdAt: '2024-01-02T00:00:00.000Z'
+                        updatedAt: '2024-01-02T00:00:00.000Z'
+                        author:
+                          id: 42
+                          subjectId: 'auth2|abc123'
+                          displayName: 'alice'
+                        tvSeriesSummary:
+                          id: 1396
+                          title: 'Breaking Bad'
+                          synopsis: "A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine in order to secure his family's future."
+                          airDate: '2008-01-20'
+                          posterUrl: 'https://image.tmdb.org/t/p/original/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '500': { $ref: '#/components/responses/InternalError' }
@@ -1238,7 +1324,7 @@ paths:
         filtered to titles that have at least `minCount` ratings (default 3) to
         prevent single-vote outliers from dominating the list.
 
-        Each result is enriched with a `movieSummary` field containing that title's 
+        Each result is enriched with a `movieSummary` field containing that movie's 
         metadata or `null` if no metadata exists. 
 
         **Caching:** results are cached in memory for 5 minutes per unique
@@ -1259,7 +1345,7 @@ paths:
           schema: { type: integer, minimum: 1, default: 3 }
       responses:
         '200':
-          description: Top-rated movies enriched with title metadata
+          description: Top-rated movies enriched with movie metadata
           content:
             application/json:
               schema:
@@ -1270,6 +1356,7 @@ paths:
                     items:
                       type: object
                       properties:
+                        mediaId: { type: integer, example: 550 }
                         avgScore: { type: number, format: float, example: 8.7 }
                         ratingCount: { type: integer, example: 42 }
                         movieSummary:
@@ -1303,7 +1390,7 @@ paths:
         filtered to titles that have at least `minCount` ratings (default 3) to
         prevent single-vote outliers from dominating the list.
 
-        Each result is enriched with a `tvSeriesSummary` field containing that title's 
+        Each result is enriched with a `tvSeriesSummary` field containing that series's 
         metadata or `null` if no metadata exists. 
 
         **Caching:** results are cached in memory for 5 minutes per unique
@@ -1324,7 +1411,7 @@ paths:
           schema: { type: integer, minimum: 1, default: 3 }
       responses:
         '200':
-          description: Top-rated TV series enriched with title metadata
+          description: Top-rated TV series enriched with  series metadata
           content:
             application/json:
               schema:
@@ -1335,6 +1422,7 @@ paths:
                     items:
                       type: object
                       properties:
+                        mediaId: { type: integer, example: 1396 }
                         avgScore: { type: number, format: float, example: 8.7 }
                         ratingCount: { type: integer, example: 42 }
                         tvSeriesSummary:
