@@ -38,7 +38,11 @@ describe('GET /v1/tv/search', () => {
     const response = await request(app).get('/v1/tv/search').query({ title: 'Game of Thrones' });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Displaying 1 out of 1 available results');
+    expect(response.body.pagination).toEqual({
+      page: 1,
+      totalResults: 1,
+      totalPages: 1,
+    });
     expect(response.body.results).toEqual([
       {
         id: 1399,
@@ -52,12 +56,12 @@ describe('GET /v1/tv/search', () => {
     expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('query=Game%20of%20Thrones'));
   });
 
-  // Happy path — limit caps results
-  it('respects a numeric limit', async () => {
+  // Happy path — page limits results
+  it('respects a numeric page', async () => {
     mockFetch.mockResolvedValue(mockTmdbResponse(searchPage));
-    const response = await request(app).get('/v1/tv/search').query({ title: 'star', limit: '1' });
+    const response = await request(app).get('/v1/tv/search').query({ title: 'star', page: '1' });
     expect(response.status).toBe(200);
-    expect(response.body.results.length).toBeLessThanOrEqual(1);
+    expect(response.body.results.length).toBeLessThanOrEqual(20);
   });
 
   // Sad path — missing title
@@ -68,33 +72,33 @@ describe('GET /v1/tv/search', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  // Sad path — non-numeric limit
-  it('returns 400 when limit is not numeric', async () => {
-    const response = await request(app).get('/v1/tv/search').query({ title: 'star', limit: 'abc' });
+  // Sad path — non-numeric page
+  it('returns 400 when page is not numeric', async () => {
+    const response = await request(app).get('/v1/tv/search').query({ title: 'star', page: 'abc' });
     expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/limit/i);
+    expect(response.body.error).toMatch(/page/i);
   });
 
-  // Edge case — limit of zero
-  it('returns 400 when limit is zero', async () => {
-    const response = await request(app).get('/v1/tv/search').query({ title: 'star', limit: '0' });
+  // Edge case — page of zero
+  it('returns 400 when page is zero', async () => {
+    const response = await request(app).get('/v1/tv/search').query({ title: 'star', page: '0' });
     expect(response.status).toBe(400);
   });
 
-  // Edge case — negative limit
-  it('returns 400 when limit is negative', async () => {
-    const response = await request(app).get('/v1/tv/search').query({ title: 'star', limit: '-3' });
+  // Edge case — negative page
+  it('returns 400 when page is negative', async () => {
+    const response = await request(app).get('/v1/tv/search').query({ title: 'star', page: '-3' });
     expect(response.status).toBe(400);
   });
 
   // Sad path — TMDB returns an error status
   it('propagates TMDB error status and message', async () => {
     mockFetch.mockResolvedValue(
-      mockTmdbResponse({ message: 'Invalid API key' }, { ok: false, status: 401 })
+      mockTmdbResponse({ errors: ['Invalid API key'] }, { ok: false, status: 401 })
     );
     const response = await request(app).get('/v1/tv/search').query({ title: 'x' });
     expect(response.status).toBe(401);
-    expect(response.body.error).toBe('Invalid API key');
+    expect(response.body.error).toEqual(['Invalid API key']);
   });
 
   // Sad path — fetch throws
@@ -169,42 +173,51 @@ describe('GET /v1/tv/popular', () => {
     mockFetch.mockResolvedValue(mockTmdbResponse(searchPage));
     const response = await request(app).get('/v1/tv/popular');
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Displaying 1 out of 1 available results');
+    expect(response.body.pagination).toEqual({
+      page: 1,
+      totalResults: 1,
+      totalPages: 1,
+    });
     expect(response.body.results[0].title).toBe('Game of Thrones');
     expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/tv/popular'));
   });
 
-  // Happy path — limit caps results
-  it('respects a numeric limit', async () => {
+  // Happy path — page limits results
+  it('respects a numeric page', async () => {
     mockFetch.mockResolvedValue(mockTmdbResponse(searchPage));
-    const response = await request(app).get('/v1/tv/popular').query({ limit: '1' });
+    const response = await request(app).get('/v1/tv/popular').query({ page: '1' });
     expect(response.status).toBe(200);
-    expect(response.body.results.length).toBeLessThanOrEqual(1);
+    expect(response.body.results.length).toBeLessThanOrEqual(20);
   });
 
-  // Sad path — non-numeric limit
-  it('returns 400 when limit is not numeric', async () => {
-    const response = await request(app).get('/v1/tv/popular').query({ limit: 'foo' });
+  // Sad path — non-numeric page
+  it('returns 400 when page is not numeric', async () => {
+    const response = await request(app).get('/v1/tv/popular').query({ page: 'foo' });
     expect(response.status).toBe(400);
   });
 
-  // Edge case — zero limit
-  it('returns 400 when limit is zero', async () => {
-    const response = await request(app).get('/v1/tv/popular').query({ limit: '0' });
+  // Edge case — zero page
+  it('returns 400 when page is zero', async () => {
+    const response = await request(app).get('/v1/tv/popular').query({ page: '0' });
     expect(response.status).toBe(400);
   });
 
-  // Edge case — limit larger than total available results is capped, not errored
-  it('does not error when limit exceeds total available results', async () => {
-    mockFetch.mockResolvedValue(mockTmdbResponse(searchPage));
-    const response = await request(app).get('/v1/tv/popular').query({ limit: '999999' });
-    expect(response.status).toBe(200);
+  // Edge case — page larger than total available results is errored
+  it('errors when page exceeds total available results', async () => {
+    mockFetch.mockResolvedValue(
+      mockTmdbResponse(
+        { errors: ['page must be less than or equal to 500'] },
+        { ok: false, status: 400 }
+      )
+    );
+    const response = await request(app).get('/v1/tv/popular').query({ page: '999' });
+    expect(response.status).toBe(400);
   });
 
   // Sad path — TMDB error
   it('propagates TMDB error', async () => {
     mockFetch.mockResolvedValue(
-      mockTmdbResponse({ message: 'Service unavailable' }, { ok: false, status: 503 })
+      mockTmdbResponse({ status_message: 'Service unavailable' }, { ok: false, status: 503 })
     );
     const response = await request(app).get('/v1/tv/popular');
     expect(response.status).toBe(503);

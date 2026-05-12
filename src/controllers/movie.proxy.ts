@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { fetchPaginatedTmdbData } from '../utils/tmdb';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_URL = 'https://image.tmdb.org/t/p/original';
@@ -12,37 +11,71 @@ interface MovieSummary {
   posterUrl: string;
 }
 
+interface TmdbResponse {
+  page?: number;
+  results?: Array<{
+    id: number;
+    title: string;
+    overview: string;
+    release_date: string;
+    poster_path: string;
+  }>;
+  total_results?: number;
+  total_pages?: number;
+  errors?: string[];
+  status_message?: string;
+  status_code?: number;
+}
+
 export const searchMovie = async (request: Request, response: Response) => {
   const title = request.query.title;
-  const limitQuery = request.query.limit;
+  const pageQuery = request.query.page || 1;
   const apiKey = process.env.TMDB_API_KEY;
 
   try {
     const encodedTitle = encodeURIComponent(String(title));
-    const result = await fetchPaginatedTmdbData(
-      BASE_URL,
-      '/search/movie',
-      apiKey,
-      limitQuery,
-      `query=${encodedTitle}`
+    const result = await fetch(
+      `${BASE_URL}/search/movie?api_key=${apiKey}&query=${encodedTitle}&page=${pageQuery}`
     );
+    const data = (await result.json()) as TmdbResponse;
 
-    if (result.error) {
-      response.status(result.status || 500).json({ error: result.error });
+    if (!result.ok) {
+      if (
+        data.errors?.some?.((e: string) =>
+          e.toLowerCase().includes('page must be less than or equal to')
+        )
+      ) {
+        response.status(200).json({
+          results: [],
+          pagination: {
+            page: Number(pageQuery) || 1,
+            totalResults: 0,
+            totalPages: 0,
+          },
+        });
+        return;
+      }
+      response
+        .status(result.status || 500)
+        .json({ error: data.status_message || data.errors || 'TMDB API error' });
       return;
     }
 
-    const transformedResults: MovieSummary[] = (result.results || []).map((movie) => ({
-      id: movie.id as number,
-      title: movie.title as string,
-      synopsis: movie.overview as string,
-      releaseDate: movie.release_date as string,
+    const transformedResults: MovieSummary[] = (data.results || []).map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      synopsis: movie.overview,
+      releaseDate: movie.release_date,
       posterUrl: `${IMAGE_URL}${movie.poster_path}`,
     }));
 
     response.json({
-      message: `Displaying ${transformedResults.length} out of ${result.maxResults} available results`,
       results: transformedResults,
+      pagination: {
+        page: data.page || Number(pageQuery) || 1,
+        totalResults: data.total_results || 0,
+        totalPages: data.total_pages || 0,
+      },
     });
   } catch (_error) {
     response.status(502).json({ error: 'Failed to reach service' });
@@ -78,28 +111,53 @@ export const getMovieDetails = async (request: Request, response: Response) => {
 };
 
 export const getPopularMovies = async (request: Request, response: Response) => {
-  const limitQuery = request.query.limit;
+  const pageQuery = request.query.page || 1;
   const apiKey = process.env.TMDB_API_KEY;
 
   try {
-    const result = await fetchPaginatedTmdbData(BASE_URL, '/movie/popular', apiKey, limitQuery);
+    const result = await fetch(`${BASE_URL}/movie/popular?api_key=${apiKey}&page=${pageQuery}`);
+    const data = (await result.json()) as TmdbResponse;
 
-    if (result.error) {
-      response.status(result.status || 500).json({ error: result.error });
+    if (!result.ok) {
+      if (
+        data.errors?.some?.((e: string) =>
+          e.toLowerCase().includes('page must be less than or equal to')
+        )
+      ) {
+        response.status(200).json({
+          results: [],
+          pagination: {
+            page: Number(pageQuery) || 1,
+            totalResults: 0,
+            totalPages: 0,
+          },
+        });
+        return;
+      }
+      response
+        .status(result.status || 500)
+        .json({ error: data.status_message || data.errors || 'TMDB API error' });
       return;
     }
 
-    const transformedResults: MovieSummary[] = (result.results || []).map((movie) => ({
-      id: movie.id as number,
-      title: movie.title as string,
-      synopsis: movie.overview as string,
-      releaseDate: movie.release_date as string,
+    const transformedResults: MovieSummary[] = (data.results || []).map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      synopsis: movie.overview,
+      releaseDate: movie.release_date,
       posterUrl: `${IMAGE_URL}${movie.poster_path}`,
     }));
 
+    const totalPages = data.total_pages && data.total_pages > 500 ? 500 : data.total_pages || 0;
+    const totalResults = totalPages === 500 ? 10000 : data.total_results || 0;
+
     response.json({
-      message: `Displaying ${transformedResults.length} out of ${result.maxResults} available results`,
       results: transformedResults,
+      pagination: {
+        page: data.page || Number(pageQuery) || 1,
+        totalResults: totalResults,
+        totalPages: totalPages,
+      },
     });
   } catch (_error) {
     response.status(502).json({ error: 'Failed to reach service' });

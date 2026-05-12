@@ -247,12 +247,12 @@ describe('GET /v1/ratings/me', () => {
     const response = await request(app).get('/v1/ratings/me');
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(1);
-    expect(response.body.data[0].tmdb.title).toBe('Fight Club');
+    expect(response.body.data[0].movieSummary.title).toBe('Fight Club');
     expect(response.body.data[0].author).toBeNull();
     expect(response.body.pagination).toEqual({ page: 1, limit: 20, total: 1, totalPages: 1 });
   });
 
-  it('returns tmdb: null when TMDB fetch fails for an item', async () => {
+  it('returns movieSummary: null when TMDB fetch fails for an item', async () => {
     setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
     mockPrismaFindMany.mockResolvedValue([
       { id: 1, mediaId: 550, mediaType: 'movie', score: 8.5, user: null },
@@ -262,7 +262,7 @@ describe('GET /v1/ratings/me', () => {
 
     const response = await request(app).get('/v1/ratings/me');
     expect(response.status).toBe(200);
-    expect(response.body.data[0].tmdb).toBeNull();
+    expect(response.body.data[0].movieSummary).toBeNull();
     expect(response.body.data[0].author).toBeNull();
   });
 
@@ -278,7 +278,7 @@ describe('GET /v1/ratings/me', () => {
       },
     ]);
     mockPrismaCount.mockResolvedValue(1);
-    // TMDB unavailable — tmdb: null in response
+    // TMDB unavailable — movieSummary: null in response
     mockFetch.mockResolvedValue({ ok: false, status: 503 });
 
     const response = await request(app).get('/v1/ratings/me');
@@ -288,7 +288,7 @@ describe('GET /v1/ratings/me', () => {
       subjectId: 'u1',
       displayName: 'testuser',
     });
-    expect(response.body.data[0].tmdb).toBeNull();
+    expect(response.body.data[0].movieSummary).toBeNull();
   });
 
   it('ignores client-supplied userId query param', async () => {

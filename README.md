@@ -27,7 +27,7 @@ container cold-starts; subsequent requests are fast.
 Mint an access token at the course **Token Playground** with this group's
 audience:
 
-- Playground: <https://tcss-460-iam.onrender.com/playground>
+- Playground: <https://tcss460-token-playground.onrender.com/>
 - Issuer: `https://tcss-460-iam.onrender.com`
 - **Audience: `group-8-api`** (required — the API rejects tokens with any
   other `aud` claim)

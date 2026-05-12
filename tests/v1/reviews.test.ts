@@ -3,6 +3,9 @@ import { app } from '../../src/app';
 import { setMockUser } from '../__mocks__/requireAuth';
 import { Prisma } from '@/generated/prisma/client';
 
+const mockFetch = jest.fn();
+global.fetch = mockFetch as unknown as typeof fetch;
+
 const mockPrismaFindMany = jest.fn();
 const mockPrismaCount = jest.fn();
 const mockPrismaFindUnique = jest.fn();
@@ -33,6 +36,7 @@ jest.mock('@/prisma', () => ({
 }));
 
 beforeEach(() => {
+  mockFetch.mockReset();
   mockPrismaFindMany.mockReset();
   mockPrismaCount.mockReset();
   mockPrismaFindUnique.mockReset();
@@ -54,6 +58,7 @@ beforeEach(() => {
   mockUserUpdate.mockResolvedValue({ id: 'u1', username: 'testuser', email: 'test@test.com' });
 
   setMockUser(null);
+  process.env.TMDB_API_KEY = 'test-key';
 });
 
 describe('GET /v1/reviews', () => {
@@ -220,6 +225,18 @@ describe('DELETE /v1/reviews/:id', () => {
 });
 
 describe('GET /v1/reviews/me', () => {
+  const tmdbMovie = {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      id: 550,
+      title: 'Fight Club',
+      overview: 'A soap salesman...',
+      poster_path: '/abc.jpg',
+      release_date: '1999-10-15',
+    }),
+  };
+
   it('returns 401 without auth', async () => {
     const response = await request(app).get('/v1/reviews/me');
     expect(response.status).toBe(401);
@@ -231,23 +248,50 @@ describe('GET /v1/reviews/me', () => {
       {
         id: 7,
         title: 'mine',
+        mediaId: 550,
+        mediaType: 'movie',
         user: { id: 'u1', subjectId: 'u1', username: 'testuser', firstName: null, lastName: null },
       },
     ]);
     mockPrismaCount.mockResolvedValue(1);
+    mockFetch.mockResolvedValue(tmdbMovie);
+
     const response = await request(app).get('/v1/reviews/me');
     expect(response.status).toBe(200);
     expect(response.body.data).toEqual([
       {
         id: 7,
         title: 'mine',
+        mediaId: 550,
+        mediaType: 'movie',
         author: { id: 'u1', subjectId: 'u1', displayName: 'testuser' },
+        movieSummary: {
+          id: 550,
+          title: 'Fight Club',
+          synopsis: 'A soap salesman...',
+          posterUrl: 'https://image.tmdb.org/t/p/original/abc.jpg',
+          releaseDate: '1999-10-15',
+        },
       },
     ]);
     // Confirm Prisma was scoped to the resolved local user id, not anything client-supplied.
     expect(mockPrismaFindMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: 'u1' } })
     );
+  });
+
+  it('returns movieSummary: null when TMDB fetch fails for an item', async () => {
+    setMockUser({ sub: 'u1', email: 'test@test.com', role: 'User' });
+    mockPrismaFindMany.mockResolvedValue([
+      { id: 1, mediaId: 550, mediaType: 'movie', title: 'mine', user: null },
+    ]);
+    mockPrismaCount.mockResolvedValue(1);
+    mockFetch.mockResolvedValue({ ok: false, status: 404 });
+
+    const response = await request(app).get('/v1/reviews/me');
+    expect(response.status).toBe(200);
+    expect(response.body.data[0].movieSummary).toBeNull();
+    expect(response.body.data[0].author).toBeNull();
   });
 
   it('ignores client-supplied userId query param', async () => {

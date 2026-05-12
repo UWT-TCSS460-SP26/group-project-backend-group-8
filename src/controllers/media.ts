@@ -106,8 +106,7 @@ export const getMediaDetails = async (
         },
       },
     });
-  } catch (error) {
-    console.error(`[getMediaDetails] id=${rawId} type=${type}`, error);
+  } catch (_error) {
     response.status(500).json({ error: 'Failed to fetch media details' });
   }
 };

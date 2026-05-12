@@ -155,12 +155,14 @@ export const validateNumericId = (request: Request, response: Response, next: Ne
   next();
 };
 
-export const validateNumericLimit = (request: Request, response: Response, next: NextFunction) => {
-  const limitValue = request.params.limit || request.query.limit;
-  if (limitValue !== undefined) {
-    const limit = Number(limitValue);
-    if (!Number.isInteger(limit) || limit <= 0) {
-      response.status(400).json({ error: 'Parameter "limit" must be a positive integer' });
+export const validatePageValue = (request: Request, response: Response, next: NextFunction) => {
+  const pageValue = request.params.page || request.query.page;
+  if (pageValue !== undefined) {
+    const page = Number(pageValue);
+    if (!Number.isInteger(page) || page <= 0 || page > 500) {
+      response
+        .status(400)
+        .json({ error: 'Parameter "page" must be a positive integer from 1 to 500' });
       return;
     }
   }
