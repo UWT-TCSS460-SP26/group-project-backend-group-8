@@ -30,7 +30,7 @@ tags:
   - name: Community
     description: Public discovery routes — top-rated content and user history
   - name: Issues
-    description: Public bug-report submissions (admin triage routes ship in Sprint 4)
+    description: Bug reports. Anyone can submit a report; Admin or above can list, read, triage, and delete.
 
 paths:
   # ── General ───────────────────────────────────────────────────
@@ -1368,7 +1368,7 @@ paths:
       description: |
         Public submission route — anyone with the URL can file a bug report.
         No authentication required. Returns a small confirmation payload on
-        success. The admin-gated read and triage routes ship in Sprint 4.
+        success.
       requestBody:
         required: true
         content:
@@ -1408,6 +1408,295 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Failed to file issue
+
+    get:
+      tags: [Issues]
+      summary: List all bug reports (admin)
+      description: |
+        Admin-gated paginated list of all bug reports. Optionally filter by
+        `status`. Results are sorted by `createdAt` descending by default
+        (newest first).
+
+        **Role required:** Admin or above (Admin, SuperAdmin, Owner).
+
+        **Pagination:** defaults to page 1, 25 per page, max 100 per page.
+
+        **Filtering:** pass a single `status` value to narrow results.
+        Omit `status` to return all reports regardless of state.
+
+        **Sort:** only `createdAt` is supported; direction is controlled
+        by `order`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, in_progress, resolved, closed]
+          description: Filter by triage status. Omit to return all.
+          example: open
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+          description: Sort direction for createdAt. desc = newest first.
+      responses:
+        '200':
+          description: Paginated list of bug reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/IssueSummary' }
+                  pagination:
+                    type: object
+                    properties:
+                      total: { type: integer, example: 38 }
+                      page: { type: integer, example: 1 }
+                      limit: { type: integer, example: 25 }
+                      totalPages: { type: integer, example: 2 }
+              example:
+                data:
+                  - id: 7
+                    title: 'Search returns 500 on long titles'
+                    status: open
+                    reporterEmail: 'qa@example.com'
+                    createdAt: '2026-05-03T00:00:00.000Z'
+                    updatedAt: '2026-05-03T00:00:00.000Z'
+                pagination:
+                  total: 38
+                  page: 1
+                  limit: 25
+                  totalPages: 2
+        '400':
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              examples:
+                invalidStatus:
+                  summary: Unknown status value
+                  value: { error: 'Validation failed' }
+                limitTooHigh:
+                  summary: limit exceeds max
+                  value: { error: 'Validation failed' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Failed to retrieve issues' }
+
+  /v1/issues/{id}:
+    get:
+      tags: [Issues]
+      summary: Get a single bug report (admin)
+      description: |
+        Returns the full detail record for a single bug report.
+
+        **Role required:** Admin or above.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 7
+      responses:
+        '200':
+          description: Full issue detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Issue' }
+              example:
+                data:
+                  id: 7
+                  title: 'Search returns 500 on long titles'
+                  description: 'Calling /v1/movie/search?title=<300 chars> returns 500.'
+                  reproSteps: null
+                  reporterEmail: 'qa@example.com'
+                  reporterUserId: null
+                  status: open
+                  createdAt: '2026-05-03T00:00:00.000Z'
+                  updatedAt: '2026-05-03T00:00:00.000Z'
+        '400':
+          description: Non-numeric id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Parameter "id" must be a positive integer' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Issue not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Issue not found' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Failed to retrieve issue' }
+
+    patch:
+      tags: [Issues]
+      summary: Triage a bug report (admin)
+      description: |
+        Partially update a bug report's triage status. Only the `status`
+        field is accepted — send exactly one field. The valid workflow
+        transitions are:
+
+        `open` → `in_progress` → `resolved` or `closed`
+
+        Any transition between valid statuses is accepted; the API does not
+        enforce ordering. A body with an unknown status string returns `400`.
+
+        **Semantics:** PATCH (partial update) — only `status` is accepted.
+        Sending additional fields is harmless; they are stripped by the
+        validator before reaching the controller.
+
+        **Role required:** Admin or above.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 7
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [open, in_progress, resolved, closed]
+                  example: in_progress
+            examples:
+              triage:
+                summary: Move to in_progress
+                value: { status: in_progress }
+              resolve:
+                summary: Mark resolved
+                value: { status: resolved }
+              close:
+                summary: Close as wontfix
+                value: { status: closed }
+      responses:
+        '200':
+          description: Updated issue confirmation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, example: 7 }
+                      title: { type: string, example: 'Search returns 500 on long titles' }
+                      status:
+                        type: string
+                        enum: [open, in_progress, resolved, closed]
+                        example: in_progress
+                      updatedAt: { type: string, format: date-time }
+              example:
+                data:
+                  id: 7
+                  title: 'Search returns 500 on long titles'
+                  status: in_progress
+                  updatedAt: '2026-05-10T14:32:00.000Z'
+        '400':
+          description: Validation failed — missing or invalid status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              examples:
+                invalidStatus:
+                  summary: Unknown status string
+                  value: { error: 'Validation failed' }
+                emptyBody:
+                  summary: Empty body
+                  value: { error: 'Validation failed' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Issue not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Issue not found' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Failed to update issue' }
+
+    delete:
+      tags: [Issues]
+      summary: Delete a bug report (admin)
+      description: |
+        Permanently remove a bug report. Intended for resolved reports or
+        spam. Returns `204 No Content` on success — there is no response
+        body.
+
+        **Role required:** Admin or above.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 7
+      responses:
+        '204':
+          description: Issue deleted — no response body
+        '400':
+          description: Non-numeric id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Parameter "id" must be a positive integer' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Issue not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Issue not found' }
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: 'Failed to delete issue' }
 
 # ── Schemas ───────────────────────────────────────────────────
 
@@ -1532,6 +1821,52 @@ components:
           enum: [open, in_progress, resolved, closed]
           example: open
         createdAt: { type: string, format: date-time }
+
+    IssueSummary:
+      type: object
+      description: Condensed issue shape returned by the admin list route
+      properties:
+        id: { type: integer, example: 7 }
+        title: { type: string, example: 'Search returns 500 on long titles' }
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+          example: open
+        reporterEmail:
+          type: string
+          format: email
+          nullable: true
+          example: 'qa@example.com'
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    Issue:
+      type: object
+      description: Full issue record returned by the admin detail route
+      properties:
+        id: { type: integer, example: 7 }
+        title: { type: string, example: 'Search returns 500 on long titles' }
+        description:
+          { type: string, example: 'Calling /v1/movie/search?title=<300 chars> returns 500.' }
+        reproSteps:
+          type: string
+          nullable: true
+          example: null
+        reporterEmail:
+          type: string
+          format: email
+          nullable: true
+          example: 'qa@example.com'
+        reporterUserId:
+          type: integer
+          nullable: true
+          example: null
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+          example: open
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     TmdbItemDetails:
       type: object

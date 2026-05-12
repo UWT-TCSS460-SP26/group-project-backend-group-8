@@ -103,6 +103,18 @@ const validate =
     next();
   };
 
+// Sprint 4 — admin triage
+export const PatchIssueSchema = z.object({
+  status: z.enum(['open', 'in_progress', 'resolved', 'closed']),
+});
+
+export const GetIssuesQuerySchema = z.object({
+  status: z.enum(['open', 'in_progress', 'resolved', 'closed']).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(25),
+  order: z.enum(['asc', 'desc']).default('desc'),
+});
+
 export const validateGetMyRatingsQuery = validate('query', GetMyRatingsQuerySchema);
 export const validateGetTopRatedQuery = validate('query', GetTopRatedQuerySchema);
 export const validateRatingBody = validate('body', PostRatingSchema);
@@ -114,6 +126,8 @@ export const validateGetRatingsQuery = validate('query', GetRatingsQuerySchema);
 export const validateGetMyListQuery = validate('query', GetMyListQuerySchema);
 export const validateGetMediaQuery = validate('query', GetMediaQuerySchema);
 export const validatePostIssueBody = validate('body', PostIssueSchema);
+export const validatePatchIssueBody = validate('body', PatchIssueSchema);
+export const validateGetIssuesQuery = validate('query', GetIssuesQuerySchema);
 
 export type PostReviewBody = z.infer<typeof PostReviewSchema>;
 export type GetReviewsQuery = z.infer<typeof GetReviewsQuerySchema>;
@@ -123,6 +137,8 @@ export type GetMediaQuery = z.infer<typeof GetMediaQuerySchema>;
 export type GetMyRatingsQuery = z.infer<typeof GetMyRatingsQuerySchema>;
 export type GetTopRatedQuery = z.infer<typeof GetTopRatedQuerySchema>;
 export type PostIssueBody = z.infer<typeof PostIssueSchema>;
+export type PatchIssueBody = z.infer<typeof PatchIssueSchema>;
+export type GetIssuesQuery = z.infer<typeof GetIssuesQuerySchema>;
 
 export const requireEnvVar = (key: string) => {
   return (_request: Request, response: Response, next: NextFunction) => {
