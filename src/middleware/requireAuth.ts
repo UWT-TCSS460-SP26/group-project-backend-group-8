@@ -107,6 +107,10 @@ export const requireRole = (role: Role): RequestHandler => {
  * User < Moderator < Admin < SuperAdmin < Owner
  *
  *   router.delete('/messages/:id', requireAuth, requireRoleAtLeast('ADMIN'), handler);
+ *
+ *   Note: in practice, the role should be checked at request.user.role (claim from the JWT), but the
+ *   authentication server currently does not support roles other than "user". Until it does, the
+ *   workaround is to check localUser.role (our database) for the role.
  */
 export const requireRoleAtLeast = (minRole: Role): RequestHandler => {
   const minIdx = ROLE_HIERARCHY.indexOf(minRole);

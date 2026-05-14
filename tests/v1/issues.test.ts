@@ -282,6 +282,13 @@ describe('GET /v1/issues/:id', () => {
     expect(response.status).toBe(400);
   });
 
+  it('returns 400 for an id that exceeds postgres int max', async () => {
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
+    const response = await request(app).get('/v1/issues/99999999999999999999999999');
+    expect(response.status).toBe(400);
+    expect(mockIssueFindUnique).not.toHaveBeenCalled();
+  });
+
   it('returns 500 with a safe message when the DB throws', async () => {
     setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockRejectedValue(new Error('timeout'));
@@ -369,6 +376,15 @@ describe('PATCH /v1/issues/:id', () => {
     expect(response.status).toBe(400);
   });
 
+  it('returns 400 for an id that exceeds postgres int max', async () => {
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
+    const response = await request(app)
+      .patch('/v1/issues/99999999999999999999999999')
+      .send({ status: 'RESOLVED' });
+    expect(response.status).toBe(400);
+    expect(mockIssueUpdate).not.toHaveBeenCalled();
+  });
+
   it('returns 500 with a safe message when the DB throws', async () => {
     setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     mockIssueFindUnique.mockResolvedValue(baseIssue);
@@ -426,6 +442,13 @@ describe('DELETE /v1/issues/:id', () => {
     setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     const response = await request(app).delete('/v1/issues/abc');
     expect(response.status).toBe(400);
+  });
+
+  it('returns 400 for an id that exceeds postgres int max', async () => {
+    setMockUser({ sub: 'admin-1', role: 'ADMIN' });
+    const response = await request(app).delete('/v1/issues/99999999999999999999999999');
+    expect(response.status).toBe(400);
+    expect(mockIssueDelete).not.toHaveBeenCalled();
   });
 
   it('does not call delete if the issue does not exist', async () => {
