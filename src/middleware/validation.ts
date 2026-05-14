@@ -159,10 +159,11 @@ export const requireTitle = (request: Request, response: Response, next: NextFun
   next();
 };
 
+// 2147483647 is the max value for a 32-bit integer, a standard Int. Anything above that isn't a valid ID.
 export const validateNumericId = (request: Request, response: Response, next: NextFunction) => {
   const id = Number(request.params.id) || Number(request.query.id);
-  if (!Number.isInteger(id) || id <= 0) {
-    response.status(400).json({ error: 'Parameter "id" must be a positive integer' });
+  if (!Number.isInteger(id) || id <= 0 || id > 2147483647) {
+    response.status(400).json({ error: 'Parameter "id" must be a valid positive integer' });
     return;
   }
   next();
