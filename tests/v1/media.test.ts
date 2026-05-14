@@ -34,33 +34,42 @@ beforeEach(() => {
   process.env.TMDB_API_KEY = 'test-api-key';
 });
 
-describe('GET /v1/media/:id', () => {
+describe('GET /v1/community/:id', () => {
   it('returns media details along with community data', async () => {
     mockFetch.mockResolvedValue(mockTmdbResponse({ title: 'A Movie' }));
     mockPrismaFindMany.mockResolvedValue([{ id: 1, title: 'Review 1' }]);
     mockPrismaCount.mockResolvedValue(1);
     mockPrismaAggregate.mockResolvedValue({ _avg: { score: 8.5 }, _count: { score: 10 } });
 
-    const response = await request(app).get('/v1/media/550').query({ type: 'movie' });
+    const response = await request(app).get('/v1/community/550').query({ type: 'movie' });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
-      title: 'A Movie',
-      community: {
+      data: {
+        mediaId: 550,
         avgScore: 8.5,
-        totalRatings: 10,
+        ratingCount: 10,
         reviews: {
           data: [{ id: 1, title: 'Review 1', author: null }],
-          page: 1,
-          limit: 25,
-          total: 1,
+          pagination: {
+            page: 1,
+            limit: 25,
+            total: 1,
+            totalPages: 1,
+          },
+        },
+        summary: {
+          title: 'A Movie',
+          synopsis: '',
+          releaseDate: '',
+          posterUrl: '',
         },
       },
     });
   });
 
   it('returns 400 when id is invalid', async () => {
-    const response = await request(app).get('/v1/media/abc').query({ type: 'movie' });
+    const response = await request(app).get('/v1/community/abc').query({ type: 'movie' });
     expect(response.status).toBe(400);
   });
 
@@ -70,13 +79,13 @@ describe('GET /v1/media/:id', () => {
     mockPrismaCount.mockResolvedValue(0);
     mockPrismaAggregate.mockResolvedValue({ _avg: { score: null }, _count: { score: 0 } });
 
-    const response = await request(app).get('/v1/media/550').query({ type: 'movie' });
+    const response = await request(app).get('/v1/community/550').query({ type: 'movie' });
     expect(response.status).toBe(404);
   });
 
   it('handles server errors', async () => {
     mockFetch.mockRejectedValue(new Error('fail'));
-    const response = await request(app).get('/v1/media/550').query({ type: 'movie' });
+    const response = await request(app).get('/v1/community/550').query({ type: 'movie' });
     expect(response.status).toBe(500);
   });
 });

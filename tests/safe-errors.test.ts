@@ -22,7 +22,9 @@ describe('Story 7 — predictable errors and health check', () => {
   it('returns a structured 400 on validation failure', async () => {
     const response = await request(app).post('/v1/issues').send({});
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Validation failed');
+    expect(response.body.error).toBeInstanceOf(Array);
+    expect(response.body.error[0]).toHaveProperty('path');
+    expect(response.body.error[0]).toHaveProperty('message');
     expect(JSON.stringify(response.body)).not.toMatch(/at .*\(/);
   });
 });

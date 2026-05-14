@@ -17,8 +17,6 @@ servers:
 tags:
   - name: General
     description: General-purpose routes
-  - name: Media
-    description: Details, community reviews, and rating for a movie or show
   - name: Movies
     description: Movie proxy routes — search, details, and popular listings
   - name: TV Series
@@ -1226,10 +1224,143 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
-  # ── Media ─────────────────────────────────────────────────────
-  /v1/media/{id}:
+  # ── Community ─────────────────────────────────────────────────
+
+  /v1/community/top-rated/movie:
     get:
-      tags: [Media]
+      tags: [Community]
+      summary: Community top-rated movies
+      description: |
+        Returns the highest-rated movies by community average score,
+        filtered to titles that have at least `minCount` ratings (default 3) to
+        prevent single-vote outliers from dominating the list.
+
+        Each result is enriched with a `summary` field containing that movie's 
+        metadata or `null` if no metadata exists. 
+
+        **Caching:** results are cached in memory for 5 minutes per unique
+        `(limit, minCount)` combination. The response includes `cached: true`
+        and `cacheTtlSeconds: 300` when a cached result is served.
+      parameters:
+        - in: query
+          name: limit
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: minCount
+          description: Minimum number of ratings a title must have to appear in the list
+          schema: { type: integer, minimum: 1, default: 3 }
+      responses:
+        '200':
+          description: Top-rated movies enriched with movie metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        mediaId: { type: integer, example: 550 }
+                        avgScore: { type: number, format: float, example: 8.7 }
+                        ratingCount: { type: integer, example: 42 }
+                        summary:
+                          allOf:
+                            - $ref: '#/components/schemas/MovieSummary'
+                          nullable: true
+                  cached: { type: boolean, example: false }
+                  cacheTtlSeconds: { type: integer, example: 300 }
+        '400':
+          description: Validation failed (non-numeric limit or minCount)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              examples:
+                nonNumeric:
+                  summary: Non-numeric parameter
+                  value:
+                    error: 'Parameters "limit" and "minCount" must be numeric'
+        '500':
+          description: Database or TMDB error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/community/top-rated/tv:
+    get:
+      tags: [Community]
+      summary: Community top-rated TV series
+      description: |
+        Returns the highest-rated TV series by community average score,
+        filtered to titles that have at least `minCount` ratings (default 3) to
+        prevent single-vote outliers from dominating the list.
+
+        Each result is enriched with a `summary` field containing that series's 
+        metadata or `null` if no metadata exists. 
+
+        **Caching:** results are cached in memory for 5 minutes per unique
+        `(limit, minCount)` combination. The response includes `cached: true`
+        and `cacheTtlSeconds: 300` when a cached result is served.
+      parameters:
+        - in: query
+          name: limit
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: minCount
+          description: Minimum number of ratings a title must have to appear in the list
+          schema: { type: integer, minimum: 1, default: 3 }
+      responses:
+        '200':
+          description: Top-rated TV series enriched with  series metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        mediaId: { type: integer, example: 1396 }
+                        avgScore: { type: number, format: float, example: 8.7 }
+                        ratingCount: { type: integer, example: 42 }
+                        summary:
+                          allOf:
+                            - $ref: '#/components/schemas/TvSeriesSummary'
+                          nullable: true
+                  cached: { type: boolean, example: false }
+                  cacheTtlSeconds: { type: integer, example: 300 }
+        '400':
+          description: Validation failed (non-numeric limit or minCount)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              examples:
+                nonNumeric:
+                  summary: Non-numeric parameter
+                  value:
+                    error: 'Parameters "limit" and "minCount" must be numeric'
+        '500':
+          description: Database or TMDB error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/community/{id}:
+    get:
+      tags: [Community]
       summary: Movie or TV details
       description: |
         Returns details for a movie or TV show combined with community
@@ -1265,20 +1396,23 @@ paths:
             application/json:
               schema:
                 type: object
-                description: Details for the movie or show with community ratings and reviews
                 properties:
-                  community:
+                  data:
                     type: object
+                    description: Details for the movie or show with community ratings and reviews
                     properties:
+                      mediaId: { type: integer, example: 550 }
                       avgScore:
                         type: number
                         format: float
                         nullable: true
                         description: Average community score (1.0–10.0); null when no ratings exist.
                         example: 7.4
-                      totalRatings:
-                        type: integer
-                        example: 42
+                      totalRatings: { type: integer, example: 42 }
+                      summary:
+                        oneOf:
+                          - $ref: '#/components/schemas/MovieSummary'
+                          - $ref: '#/components/schemas/TvSeriesSummary'
                       reviews:
                         type: object
                         properties:
@@ -1292,9 +1426,14 @@ paths:
                                 title: { type: string, nullable: true }
                                 body: { type: string }
                                 createdAt: { type: string, format: date-time }
-                          page: { type: integer, example: 1 }
-                          limit: { type: integer, example: 25 }
-                          total: { type: integer, example: 3 }
+                                author: { $ref: '#/components/schemas/Author' }
+                          pagination:
+                            type: object
+                            properties:
+                              page: { type: integer, example: 1 }
+                              limit: { type: integer, example: 25 }
+                              total: { type: integer, example: 3 }
+                              totalPages: { type: integer, example: 1 }
         '400':
           description: Invalid id or missing/invalid type parameter
           content:
@@ -1306,146 +1445,14 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
               example:
-                error: Media not found
+                error: Title not found
         '500':
           description: TMDB or database error
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
-
-  # ── Community ─────────────────────────────────────────────────
-
-  /v1/community/top-rated/movie:
-    get:
-      tags: [Community]
-      summary: Community top-rated movies
-      description: |
-        Returns the highest-rated movies by community average score,
-        filtered to titles that have at least `minCount` ratings (default 3) to
-        prevent single-vote outliers from dominating the list.
-
-        Each result is enriched with a `movieSummary` field containing that movie's 
-        metadata or `null` if no metadata exists. 
-
-        **Caching:** results are cached in memory for 5 minutes per unique
-        `(limit, minCount)` combination. The response includes `cached: true`
-        and `cacheTtlSeconds: 300` when a cached result is served.
-      parameters:
-        - in: query
-          name: limit
-          description: Number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - in: query
-          name: minCount
-          description: Minimum number of ratings a title must have to appear in the list
-          schema: { type: integer, minimum: 1, default: 3 }
-      responses:
-        '200':
-          description: Top-rated movies enriched with movie metadata
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        mediaId: { type: integer, example: 550 }
-                        avgScore: { type: number, format: float, example: 8.7 }
-                        ratingCount: { type: integer, example: 42 }
-                        movieSummary:
-                          allOf:
-                            - $ref: '#/components/schemas/MovieSummary'
-                          nullable: true
-                  cached: { type: boolean, example: false }
-                  cacheTtlSeconds: { type: integer, example: 300 }
-        '400':
-          description: Validation failed (non-numeric limit or minCount)
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-              examples:
-                nonNumeric:
-                  summary: Non-numeric parameter
-                  value:
-                    error: 'Parameters "limit" and "minCount" must be numeric'
-        '500':
-          description: Database or TMDB error
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-
-  /v1/community/top-rated/tv:
-    get:
-      tags: [Community]
-      summary: Community top-rated TV series
-      description: |
-        Returns the highest-rated TV series by community average score,
-        filtered to titles that have at least `minCount` ratings (default 3) to
-        prevent single-vote outliers from dominating the list.
-
-        Each result is enriched with a `tvSeriesSummary` field containing that series's 
-        metadata or `null` if no metadata exists. 
-
-        **Caching:** results are cached in memory for 5 minutes per unique
-        `(limit, minCount)` combination. The response includes `cached: true`
-        and `cacheTtlSeconds: 300` when a cached result is served.
-      parameters:
-        - in: query
-          name: limit
-          description: Number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - in: query
-          name: minCount
-          description: Minimum number of ratings a title must have to appear in the list
-          schema: { type: integer, minimum: 1, default: 3 }
-      responses:
-        '200':
-          description: Top-rated TV series enriched with  series metadata
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        mediaId: { type: integer, example: 1396 }
-                        avgScore: { type: number, format: float, example: 8.7 }
-                        ratingCount: { type: integer, example: 42 }
-                        tvSeriesSummary:
-                          allOf:
-                            - $ref: '#/components/schemas/TvSeriesSummary'
-                          nullable: true
-                  cached: { type: boolean, example: false }
-                  cacheTtlSeconds: { type: integer, example: 300 }
-        '400':
-          description: Validation failed (non-numeric limit or minCount)
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-              examples:
-                nonNumeric:
-                  summary: Non-numeric parameter
-                  value:
-                    error: 'Parameters "limit" and "minCount" must be numeric'
-        '500':
-          description: Database or TMDB error
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error: Failed to fetch details
 
   # ── Issues ────────────────────────────────────────────────────
 
@@ -1955,17 +1962,6 @@ components:
           example: open
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-
-    TmdbItemDetails:
-      type: object
-      nullable: true
-      description: TMDB metadata for a single movie or TV show. Null when TMDB is unavailable.
-      properties:
-        id: { type: integer, example: 550 }
-        title: { type: string, example: Fight Club }
-        synopsis: { type: string }
-        posterUrl: { type: string, format: uri }
-        releaseDate: { type: string, format: date, nullable: true }
 
     Author:
       type: object
