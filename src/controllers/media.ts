@@ -3,27 +3,7 @@ import { prisma } from '@/prisma';
 import { MediaType } from '@/generated/prisma';
 import type { GetMediaQuery } from '@/middleware/validation';
 import { authorUserSelect, toAuthor, type AuthorUser } from '@/utils/author';
-
-const TMDB_BASE = 'https://api.themoviedb.org/3';
-
-/**
- * Fetch movie or TV details from TMDB.
- * Mirrors the pattern used in movie.proxy / tv.proxy controllers.
- */
-const fetchTmdbDetails = async (
-  mediaId: number,
-  mediaType: 'movie' | 'tv'
-): Promise<Record<string, unknown> | null> => {
-  const apiKey = process.env.TMDB_API_KEY;
-  if (!apiKey) return null;
-
-  const path = mediaType === 'movie' ? `/movie/${mediaId}` : `/tv/${mediaId}`;
-  const url = `${TMDB_BASE}${path}?api_key=${apiKey}&language=en-US`;
-
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  return res.json() as Promise<Record<string, unknown>>;
-};
+import { fetchMovieDetails, fetchTvDetails } from '@/utils/tmdb';
 
 /**
  * GET /v1/media/:id
@@ -54,7 +34,7 @@ export const getMediaDetails = async (
   try {
     // ── Run TMDB fetch + DB queries in parallel ──────────────────────────────
     const [tmdbDetails, reviews, ratingAgg] = await Promise.all([
-      fetchTmdbDetails(rawId, type),
+      type === 'movie' ? fetchMovieDetails(rawId) : fetchTvDetails(rawId),
 
       prisma.review.findMany({
         where: { mediaId: rawId, mediaType },
@@ -79,7 +59,7 @@ export const getMediaDetails = async (
     ]);
 
     if (!tmdbDetails) {
-      response.status(404).json({ error: 'Media not found' });
+      response.status(404).json({ error: 'Title not found' });
       return;
     }
 
@@ -91,22 +71,26 @@ export const getMediaDetails = async (
     });
 
     response.json({
-      ...tmdbDetails,
-      community: {
+      data: {
+        mediaId: rawId,
         avgScore,
-        totalRatings: ratingAgg._count.score,
+        ratingCount: ratingAgg._count.score,
+        summary: { ...tmdbDetails },
         reviews: {
           data: reviews.map(({ user, ...rest }) => ({
             ...rest,
             author: toAuthor(user as AuthorUser | null),
           })),
-          page,
-          limit,
-          total: totalReviews,
+          pagination: {
+            page,
+            limit,
+            total: totalReviews,
+            totalPages: Math.ceil(totalReviews / limit),
+          },
         },
       },
     });
   } catch (_error) {
-    response.status(500).json({ error: 'Failed to fetch media details' });
+    response.status(500).json({ error: 'Failed to fetch details' });
   }
 };

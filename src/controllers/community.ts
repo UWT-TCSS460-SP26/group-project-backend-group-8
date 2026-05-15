@@ -1,40 +1,30 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
-import { fetchMovieDetails, fetchTvDetails, MovieSummary, TvSeriesSummary } from '@/utils/tmdb';
+import { fetchMovieDetails, fetchTvDetails } from '@/utils/tmdb';
 import type { GetTopRatedQuery } from '@/middleware/validation';
+import { MovieSummary } from '@/controllers/movie.proxy';
+import { TvSeriesSummary } from '@/controllers/tv.proxy';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-interface TopRatedMovieItem {
+interface TopRatedItem {
   mediaId: number;
   avgScore: number;
   ratingCount: number;
-  movieSummary: MovieSummary | null;
+  summary: MovieSummary | TvSeriesSummary | null;
 }
 
-interface TopRatedTvItem {
-  mediaId: number;
-  avgScore: number;
-  ratingCount: number;
-  tvSeriesSummary: TvSeriesSummary | null;
-}
-
-interface MovieCacheEntry {
-  data: TopRatedMovieItem[];
+interface MediaCacheEntry {
+  data: TopRatedItem[];
   expiresAt: number;
 }
 
-interface TvCacheEntry {
-  data: TopRatedTvItem[];
-  expiresAt: number;
-}
-
-const movieCache = new Map<string, MovieCacheEntry>();
-const tvCache = new Map<string, TvCacheEntry>();
+const movieCache = new Map<string, MediaCacheEntry>();
+const tvCache = new Map<string, MediaCacheEntry>();
 
 const cacheKey = (limit: number, minCount: number) => `${limit}:${minCount}`;
 
-const getMovieCached = (limit: number, minCount: number): TopRatedMovieItem[] | null => {
+const getMovieCached = (limit: number, minCount: number): TopRatedItem[] | null => {
   const key = cacheKey(limit, minCount);
   const entry = movieCache.get(key);
   if (!entry || Date.now() > entry.expiresAt) {
@@ -44,11 +34,11 @@ const getMovieCached = (limit: number, minCount: number): TopRatedMovieItem[] | 
   return entry.data;
 };
 
-const setMovieCache = (limit: number, minCount: number, data: TopRatedMovieItem[]): void => {
+const setMovieCache = (limit: number, minCount: number, data: TopRatedItem[]): void => {
   movieCache.set(cacheKey(limit, minCount), { data, expiresAt: Date.now() + CACHE_TTL_MS });
 };
 
-const getTvCached = (limit: number, minCount: number): TopRatedTvItem[] | null => {
+const getTvCached = (limit: number, minCount: number): TopRatedItem[] | null => {
   const key = cacheKey(limit, minCount);
   const entry = tvCache.get(key);
   if (!entry || Date.now() > entry.expiresAt) {
@@ -58,7 +48,7 @@ const getTvCached = (limit: number, minCount: number): TopRatedTvItem[] | null =
   return entry.data;
 };
 
-const setTvCache = (limit: number, minCount: number, data: TopRatedTvItem[]): void => {
+const setTvCache = (limit: number, minCount: number, data: TopRatedItem[]): void => {
   tvCache.set(cacheKey(limit, minCount), { data, expiresAt: Date.now() + CACHE_TTL_MS });
 };
 
@@ -95,14 +85,14 @@ export const getTopRatedMovies = async (_request: Request, response: Response): 
       take: limit,
     });
 
-    const enriched: TopRatedMovieItem[] = await Promise.all(
+    const enriched: TopRatedItem[] = await Promise.all(
       topRated.map(async (item) => {
         const details = await fetchMovieDetails(item.mediaId);
         return {
           mediaId: item.mediaId,
           avgScore: Math.round((item._avg.score ?? 0) * 10) / 10,
           ratingCount: item._count.score,
-          movieSummary: details,
+          summary: details,
         };
       })
     );
@@ -144,14 +134,14 @@ export const getTopRatedTv = async (_request: Request, response: Response): Prom
       take: limit,
     });
 
-    const enriched: TopRatedTvItem[] = await Promise.all(
+    const enriched: TopRatedItem[] = await Promise.all(
       topRated.map(async (item) => {
         const details = await fetchTvDetails(item.mediaId);
         return {
           mediaId: item.mediaId,
           avgScore: Math.round((item._avg.score ?? 0) * 10) / 10,
           ratingCount: item._count.score,
-          tvSeriesSummary: details,
+          summary: details,
         };
       })
     );

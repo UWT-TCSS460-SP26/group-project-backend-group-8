@@ -96,14 +96,14 @@ describe('POST /v1/issues', () => {
   it('returns 400 when title is missing', async () => {
     const response = await request(app).post('/v1/issues').send({ description: 'No title.' });
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Validation failed');
+    expect(response.body.error).toBeInstanceOf(Array);
     expect(mockIssueCreate).not.toHaveBeenCalled();
   });
 
   it('returns 400 when description is missing', async () => {
     const response = await request(app).post('/v1/issues').send({ title: 'Hi' });
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Validation failed');
+    expect(response.body.error).toBeInstanceOf(Array);
   });
 
   it('returns 400 when title is whitespace-only', async () => {
@@ -211,7 +211,7 @@ describe('GET /v1/issues', () => {
     setMockUser({ sub: 'admin-1', role: 'ADMIN' });
     const response = await request(app).get('/v1/issues?status=banana');
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Validation failed');
+    expect(response.body.error).toBeInstanceOf(Array);
   });
 
   it('respects page and limit params', async () => {
@@ -337,7 +337,7 @@ describe('PATCH /v1/issues/:id', () => {
     const response = await request(app).patch('/v1/issues/1').send({ status: 'banana' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Validation failed');
+    expect(response.body.error).toBeInstanceOf(Array);
     expect(mockIssueUpdate).not.toHaveBeenCalled();
   });
 

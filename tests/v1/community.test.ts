@@ -59,12 +59,12 @@ describe('GET /v1/community/top-rated/movie', () => {
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].avgScore).toBe(9.0);
     expect(response.body.data[0].ratingCount).toBe(5);
-    expect(response.body.data[0].movieSummary.title).toBe('Fight Club');
+    expect(response.body.data[0].summary.title).toBe('Fight Club');
     expect(response.body.cached).toBe(false);
     expect(response.body.cacheTtlSeconds).toBe(300);
   });
 
-  it('returns movieSummary: null when TMDB fetch fails for an item', async () => {
+  it('returns summary: null when TMDB fetch fails for an item', async () => {
     mockPrismaGroupBy.mockResolvedValue([
       { mediaId: 999, mediaType: 'movie', _avg: { score: 8.0 }, _count: { score: 3 } },
     ]);
@@ -73,7 +73,7 @@ describe('GET /v1/community/top-rated/movie', () => {
     const response = await request(app).get('/v1/community/top-rated/movie');
 
     expect(response.status).toBe(200);
-    expect(response.body.data[0].movieSummary).toBeNull();
+    expect(response.body.data[0].summary).toBeNull();
   });
 
   it('serves subsequent requests from cache', async () => {
@@ -126,12 +126,12 @@ describe('GET /v1/community/top-rated/tv', () => {
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].avgScore).toBe(8.5);
     expect(response.body.data[0].ratingCount).toBe(4);
-    expect(response.body.data[0].tvSeriesSummary.title).toBe('Breaking Bad');
+    expect(response.body.data[0].summary.title).toBe('Breaking Bad');
     expect(response.body.cached).toBe(false);
     expect(response.body.cacheTtlSeconds).toBe(300);
   });
 
-  it('returns tvSeriesSummary: null when TMDB fetch fails for an item', async () => {
+  it('returns summary: null when TMDB fetch fails for an item', async () => {
     mockPrismaGroupBy.mockResolvedValue([
       { mediaId: 999, mediaType: 'tv', _avg: { score: 8.0 }, _count: { score: 3 } },
     ]);
@@ -140,7 +140,7 @@ describe('GET /v1/community/top-rated/tv', () => {
     const response = await request(app).get('/v1/community/top-rated/tv');
 
     expect(response.status).toBe(200);
-    expect(response.body.data[0].tvSeriesSummary).toBeNull();
+    expect(response.body.data[0].summary).toBeNull();
   });
 
   it('serves subsequent requests from cache', async () => {

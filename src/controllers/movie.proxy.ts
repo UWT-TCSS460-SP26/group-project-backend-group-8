@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_URL = 'https://image.tmdb.org/t/p/original';
 
-interface MovieSummary {
+export interface MovieSummary {
   id: number;
   title: string;
   synopsis: string;

@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { getTopRatedMovies, getTopRatedTv } from '@/controllers/community';
-import { requireEnvVar, validateGetTopRatedQuery } from '@/middleware/validation';
+import {
+  requireEnvVar,
+  validateGetMediaQuery,
+  validateGetTopRatedQuery,
+  validateNumericId,
+} from '@/middleware/validation';
+import { getMediaDetails } from '@/controllers/media';
 
 const communityRouter = Router();
 
@@ -24,5 +30,13 @@ communityRouter.get('/top-rated/movie', validateGetTopRatedQuery, getTopRatedMov
  * minutes — the response includes `cached` and `cacheTtlSeconds` fields.
  */
 communityRouter.get('/top-rated/tv', validateGetTopRatedQuery, getTopRatedTv);
+
+/**
+ * GET /v1/community/:id?type=movie|tv
+ *
+ * TMDB details + community reviews and rating in a single request.
+ * No auth required — public read.
+ */
+communityRouter.get('/:id', validateNumericId, validateGetMediaQuery, getMediaDetails);
 
 export { communityRouter };
