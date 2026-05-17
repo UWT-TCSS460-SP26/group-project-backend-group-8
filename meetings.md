@@ -449,3 +449,31 @@ As a frontend developer (your downstream partner), I want a complete, accurate O
 As a frontend developer (your downstream partner), I want a partner-facing README and a CORS configuration that lets my app call your API so that I can integrate against your deployed API on day one.
 
 - Planning to deploy the frontend on Vercel.
+
+# Sprint-5 Meeting
+
+5/15/2026
+
+4:00 pm - 4:30 pm
+
+Attending: Christina, Mansur, Charlene
+
+Meeting Manager: Christina Blackwell
+
+Meeting Scribe: Charlene Jarrell
+
+## Agenda Item 1:
+
+_Action items_
+
+1. Setup new repo for bug tracker frontend
+
+2. Planned meeting for Sunday to compare FE builds
+
+## Agenda Item 2:
+
+_Questions_
+
+Q: Where should we keep our meeting notes?
+
+Q: How are we supposed to use Prisma Studio for triage?
